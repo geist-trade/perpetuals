@@ -51,8 +51,7 @@ pub struct Permissions {
 #[derive(Default, Debug)]
 pub struct Perpetuals {
     pub permissions: Permissions,
-    pub pools: Vec<Pubkey>,
-
+    pub pools: u64,
     pub transfer_authority_bump: u8,
     pub perpetuals_bump: u8,
     // time of inception, also used as current wall clock time for testing

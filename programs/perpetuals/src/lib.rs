@@ -6,6 +6,7 @@ pub mod error;
 pub mod instructions;
 pub mod math;
 pub mod state;
+pub mod constants;
 
 use {
     anchor_lang::prelude::*,
@@ -16,12 +17,11 @@ use {
 };
 
 solana_security_txt::security_txt! {
-    name: "Perpetuals",
-    project_url: "https://github.com/solana-labs/perpetuals",
-    contacts: "email:defi@solana.com",
+    name: "Bazaar Trade",
+    project_url: "https://github.com/geist-trade/perpetuals",
+    contacts: "email:hi@geist.so",
     policy: "",
-    preferred_languages: "en",
-    auditors: "Halborn"
+    preferred_languages: "en"
 }
 
 declare_id!("Bmr31xzZYYVUdoHmAJL1DAp2anaitW8Tw9YfASS94MKJ");
