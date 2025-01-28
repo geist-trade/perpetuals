@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
 #[constant]
+pub const ORACLE_MAXIMUM_AGE: u64 = 60; // seconds, should be lowered in prod
+
+#[constant]
 pub const ADMIN_SEED: &str = "admin";
 
 #[constant]

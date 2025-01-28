@@ -7,6 +7,7 @@ pub mod instructions;
 pub mod math;
 pub mod state;
 pub mod constants;
+pub mod oracle;
 
 use {
     anchor_lang::prelude::*,
@@ -42,12 +43,13 @@ pub mod perpetuals {
         instructions::add_pool(ctx, &params)
     }
 
-    pub fn remove_pool<'info>(
-        ctx: Context<'_, '_, '_, 'info, RemovePool<'info>>,
-        params: RemovePoolParams,
-    ) -> Result<u8> {
-        instructions::remove_pool(ctx, &params)
-    }
+    // Pools should never be removed from the protocol.
+    // pub fn remove_pool<'info>(
+    //     ctx: Context<'_, '_, '_, 'info, RemovePool<'info>>,
+    //     params: RemovePoolParams,
+    // ) -> Result<u8> {
+    //     instructions::remove_pool(ctx, &params)
+    // }
 
     pub fn add_custody<'info>(
         ctx: Context<'_, '_, '_, 'info, AddCustody<'info>>,
