@@ -1,3 +1,6 @@
+use crate::constants::CUSTODY_SEED;
+use switchboard_solana::ID as SWITCHBOARD_PROGRAM_ID;
+use pyth_solana_receiver_sdk::ID as PYTH_PROGRAM_ID;
 use {
     crate::{
         error::PerpetualsError,
@@ -9,6 +12,10 @@ use {
         },
     },
     anchor_lang::prelude::*,
+};
+use anchor_spl::token::{
+    Transfer,
+    transfer
 };
 
 #[derive(Copy, Clone, PartialEq, AnchorSerialize, AnchorDeserialize, Debug)]
@@ -130,6 +137,34 @@ pub struct PositionStats {
     pub cumulative_interest_snapshot: u128,
 }
 
+#[derive(AnchorDeserialize, AnchorSerialize)]
+pub enum Oracle {
+    PYTH(Pubkey),
+    SWITCHBOARD(Pubkey)
+}
+
+impl Oracle {
+    pub fn from_account_info(
+        account: &AccountInfo
+    ) -> Result<Self> {
+        if account.owner.eq(&PYTH_PROGRAM_ID) {
+            get_price_from_pyth(oracle, &clock)?;
+            Ok(Oracle::Pyth(oracle.key()))
+        } else if account.owner.eq(&SWITCHBOARD_PROGRAM_ID) {
+            get_price_from_switchboard(oracle, &clock)?;
+            Ok(Oracle::Switchboard(oracle.key()))
+        } else {
+            Err(PerpetualsError::InvalidOracle.into())
+        }
+    }
+
+    pub fn key(&self) -> &Pubkey {
+        match self {
+            Oracle::PYTH(key) | Oracle::SWITCHBOARD(key) => key
+        }
+    }
+}
+
 #[account]
 #[derive(Default, Debug, PartialEq)]
 pub struct Custody {
@@ -140,7 +175,8 @@ pub struct Custody {
     pub decimals: u8,
     pub is_stable: bool,
     pub is_virtual: bool,
-    pub oracle: OracleParams,
+    pub oracle: Oracle,
+    pub ema_oracle: Oracle, // It's always switchboard tho
     pub pricing: PricingParams,
     pub permissions: Permissions,
     pub fees: Fees,
@@ -613,6 +649,46 @@ impl Custody {
         }
 
         Ok(())
+    }
+
+    // Tbh this should be aggregated across entire protocol
+    // to be able to withdraw in one instruction.
+    // TODO: Aggregate fees on protocol-level.
+    pub fn withdraw_fees(
+        &self,
+        from: AccountInfo<'info>,
+        to: AccountInfo<'info>,
+        authority: AccountInfo<'info>,
+        token_program: AccountInfo<'info>,
+    ) -> Result<()> {
+        let seeds = &[
+            CUSTODY_SEED.as_bytes(),
+            self.pool.as_ref(),
+            self.mint.as_ref(),
+            &[self.bump]
+        ];
+
+        transfer(
+            CpiContext::new_with_signer(
+                token_program.to_account_info(), 
+                Transfer {
+                    from: from.to_account_info(),
+                    authority: authority.to_account_info(),
+                    to: to.to_account_info()
+                }, 
+                &[seeds]
+            ), 
+            self.assets.protocol_fees
+        )?;
+
+        Ok(())
+    }
+
+    pub fn needs_ema_oracle(&self) -> bool {
+        match self.oracle {
+            Oracle::PYTH(_) => false,
+            Oracle::SWITCHBOARD(_) => true
+        }
     }
 }
 

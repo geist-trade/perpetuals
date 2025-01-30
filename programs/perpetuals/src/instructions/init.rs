@@ -67,7 +67,7 @@ pub fn init(
     let superadmin = &mut ctx.accounts.superadmin;
 
     superadmin.permissions = Permissions::Superadmin;
-    superadmin.address = signer;
+    superadmin.address = signer.key();
 
     perpetuals.permissions.allow_swap = params.allow_swap;
     perpetuals.permissions.allow_add_liquidity = params.allow_add_liquidity;

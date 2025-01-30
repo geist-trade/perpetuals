@@ -6,12 +6,12 @@ use crate::constants::*;
 use crate::errors::InsuranceFundError;
 
 #[inline(never)]
-pub fn get_price_from_pyth(
+pub fn get_prices_from_pyth(
     oracle_account: &AccountInfo,
     clock: &Clock
-) -> Result<OraclePrice> {
+) -> Result<(OraclePrice, OraclePrice)> {
     let oracle_account_data = oracle_account.try_borrow_mut_data()?;
-    let oracle = PriceUpdateV2
+    let oracle: PriceUpdateV2 = PriceUpdateV2
         ::try_deserialize(&mut oracle_account_data.as_ref())
         .map_err(|_| InsuranceFundError::PriceError)?;
 
@@ -21,10 +21,19 @@ pub fn get_price_from_pyth(
         &oracle.price_message.feed_id
     ).map_err(|_| InsuranceFundError::PriceError)?;
 
+    // if above succeeds, ema should work too
+    let ema_price = oracle.price_message.ema_price;
+
     let exponent = price.exponent;
 
-    Ok(OraclePrice {
-        price: price.price,
-        exponent
-    })
+    Ok((
+        OraclePrice {
+            price: price.price,
+            exponent
+        },
+        OraclePrice {
+            price: ema_price,
+            exponent
+        }
+    ))
 }

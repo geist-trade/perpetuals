@@ -65,22 +65,6 @@ pub fn set_custody_config<'info>(
         return Err(ProgramError::InvalidArgument.into());
     }
 
-    // validate signatures
-    let mut multisig = ctx.accounts.multisig.load_mut()?;
-
-    let signatures_left = multisig.sign_multisig(
-        &ctx.accounts.admin,
-        &Multisig::get_account_infos(&ctx)[1..],
-        &Multisig::get_instruction_data(AdminInstruction::SetCustodyConfig, params)?,
-    )?;
-    if signatures_left > 0 {
-        msg!(
-            "Instruction has been signed but more signatures are required: {}",
-            signatures_left
-        );
-        return Ok(signatures_left);
-    }
-
     // update pool data
     let pool = ctx.accounts.pool.as_mut();
     pool.ratios = params.ratios.clone();

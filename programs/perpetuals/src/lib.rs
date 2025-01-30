@@ -58,19 +58,20 @@ pub mod perpetuals {
         instructions::add_custody(ctx, &params)
     }
 
-    pub fn remove_custody<'info>(
-        ctx: Context<'_, '_, '_, 'info, RemoveCustody<'info>>,
-        params: RemoveCustodyParams,
-    ) -> Result<u8> {
-        instructions::remove_custody(ctx, &params)
-    }
+    // It should be illegal to remove custody if permissionless.
+    // pub fn remove_custody<'info>(
+    //     ctx: Context<'_, '_, '_, 'info, RemoveCustody<'info>>,
+    //     params: RemoveCustodyParams,
+    // ) -> Result<u8> {
+    //     instructions::remove_custody(ctx, &params)
+    // }
 
-    pub fn set_admin_signers<'info>(
-        ctx: Context<'_, '_, '_, 'info, SetAdminSigners<'info>>,
-        params: SetAdminSignersParams,
-    ) -> Result<u8> {
-        instructions::set_admin_signers(ctx, &params)
-    }
+    // pub fn set_admin_signers<'info>(
+    //     ctx: Context<'_, '_, '_, 'info, SetAdminSigners<'info>>,
+    //     params: SetAdminSignersParams,
+    // ) -> Result<u8> {
+    //     instructions::set_admin_signers(ctx, &params)
+    // }
 
     pub fn set_custody_config<'info>(
         ctx: Context<'_, '_, '_, 'info, SetCustodyConfig<'info>>,

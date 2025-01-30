@@ -2,20 +2,19 @@
 
 use {
     crate::{
-        error::PerpetualsError,
-        math,
-        state::{
+        constants::{CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED, POOL_SEED, POSITION_SEED}, error::PerpetualsError, math, oracle::{get_prices_from_pyth, get_price_from_switchboard}, state::{
             custody::Custody,
             oracle::OraclePrice,
             perpetuals::Perpetuals,
             pool::Pool,
             position::{Position, Side},
-        },
+        }
     },
     anchor_lang::prelude::*,
     anchor_spl::token::{Token, TokenAccount},
     solana_program::program_error::ProgramError,
 };
+use crate::state::custody::Oracle;
 
 #[derive(Accounts)]
 #[instruction(params: OpenPositionParams)]
@@ -30,23 +29,20 @@ pub struct OpenPosition<'info> {
     )]
     pub funding_account: Box<Account<'info, TokenAccount>>,
 
-    /// CHECK: empty PDA, authority for token accounts
     #[account(
-        seeds = [b"transfer_authority"],
-        bump = perpetuals.transfer_authority_bump
-    )]
-    pub transfer_authority: AccountInfo<'info>,
-
-    #[account(
-        seeds = [b"perpetuals"],
+        seeds = [
+            PERPETUALS_SEED.as_bytes()
+        ],
         bump = perpetuals.perpetuals_bump
     )]
     pub perpetuals: Box<Account<'info, Perpetuals>>,
 
     #[account(
         mut,
-        seeds = [b"pool",
-                 pool.name.as_bytes()],
+        seeds = [
+            POOL_SEED.as_bytes(),
+            params.pool_id.to_le_bytes()
+        ],
         bump = pool.bump
     )]
     pub pool: Box<Account<'info, Pool>>,
@@ -55,53 +51,73 @@ pub struct OpenPosition<'info> {
         init,
         payer = owner,
         space = Position::LEN,
-        seeds = [b"position",
-                 owner.key().as_ref(),
-                 pool.key().as_ref(),
-                 custody.key().as_ref(),
-                 &[params.side as u8]],
+        seeds = [
+            POSITION_SEED.as_bytes(),
+            owner.key().as_ref(),
+            pool.key().as_ref(),
+            custody.key().as_ref(),
+            &[params.side as u8]
+        ],
         bump
     )]
     pub position: Box<Account<'info, Position>>,
 
     #[account(
         mut,
-        seeds = [b"custody",
-                 pool.key().as_ref(),
-                 custody.mint.as_ref()],
+        seeds = [
+            CUSTODY_SEED.as_bytes(),
+            pool.key().as_ref(),
+            custody.mint.as_ref()
+        ],
         bump = custody.bump
     )]
     pub custody: Box<Account<'info, Custody>>,
 
     /// CHECK: oracle account for the position token
     #[account(
-        constraint = custody_oracle_account.key() == custody.oracle.oracle_account
+        address = custody.oracle.key()
     )]
     pub custody_oracle_account: AccountInfo<'info>,
 
+    // If main oracle is Switchboard, EMA is not present in the account by default.
+    // We're using separate aggregator account for EMA oracles.
+    // This oracle is dependent on the main oracle, so it cant be aggregated in one account.
     #[account(
         mut,
-        seeds = [b"custody",
-                 pool.key().as_ref(),
-                 collateral_custody.mint.as_ref()],
+        constraint = custody.ema_oracle.is_none() || custody_ema_oracle_account.key() == custody.ema_oracle.key() @ PerpetualsError::InvalidEmaOracle
+    )]
+    pub custody_ema_oracle_account: Option<AccountInfo<'info>>,
+
+    #[account(
+        mut,
+        seeds = [
+            CUSTODY_SEED.as_bytes(),
+            pool.key().as_ref(),
+            collateral_custody.mint.as_ref()
+        ],
         bump = collateral_custody.bump
     )]
     pub collateral_custody: Box<Account<'info, Custody>>,
 
     /// CHECK: oracle account for the collateral token
     #[account(
-        constraint = collateral_custody_oracle_account.key() == collateral_custody.oracle.oracle_account
+        address = collateral_custody.oracle.key()
     )]
     pub collateral_custody_oracle_account: AccountInfo<'info>,
 
     #[account(
         mut,
-        seeds = [b"custody_token_account",
-                 pool.key().as_ref(),
-                 collateral_custody.mint.as_ref()],
+        seeds = [
+            CUSTODY_TOKEN_ACCOUNT_SEED.as_bytes(),
+            pool.key().as_ref(),
+            collateral_custody.mint.as_ref()
+        ],
         bump = collateral_custody.token_account_bump
     )]
     pub collateral_custody_token_account: Box<Account<'info, TokenAccount>>,
+
+    #[account()]
+    pub 
 
     system_program: Program<'info, System>,
     token_program: Program<'info, Token>,
@@ -109,6 +125,7 @@ pub struct OpenPosition<'info> {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
 pub struct OpenPositionParams {
+    pub pool_id: u64,
     pub price: u64,
     pub collateral: u64,
     pub size: u64,
@@ -124,9 +141,19 @@ pub fn open_position(ctx: Context<OpenPosition>, params: &OpenPositionParams) ->
     require!(
         perpetuals.permissions.allow_open_position
             && custody.permissions.allow_open_position
-            && !custody.is_stable,
+            && !custody.is_stable, // can't long/short stablecoins i guess?
         PerpetualsError::InstructionNotAllowed
     );
+
+    // Validate ema oracle
+    if (custody.needs_ema_oracle()) {
+        let custody_ema_oracle = &ctx.accounts.custody_ema_oracle_account;
+
+        require!(
+            custody_ema_oracle.is_some(),
+            PerpetualsError::EmaOracleRequired
+        );
+    }
 
     // validate inputs
     msg!("Validate inputs");
@@ -134,13 +161,24 @@ pub fn open_position(ctx: Context<OpenPosition>, params: &OpenPositionParams) ->
     {
         return Err(ProgramError::InvalidArgument.into());
     }
+    // If short, always use collateral custody. Otherwise:
+    // What does `is_virtual` mean? Claude says it's virtual representation of pre-approved
+    // wallet spendings, not sure if this exists.
     let use_collateral_custody = params.side == Side::Short || custody.is_virtual;
+
+    // Collateral custody will be used:
+    // - always if trader is short,
+    // - if they're long, only if the collateral is virtual.
+
     if use_collateral_custody {
+        // Collateral cant be the same as market
         require_keys_neq!(custody.key(), collateral_custody.key());
         require!(
+            // Collateral must be a stablecoin and can't be virtual.
             collateral_custody.is_stable && !collateral_custody.is_virtual,
             PerpetualsError::InvalidCollateralCustody
         );
+        // Only if trader's long and collateral custody is virtual.
     } else {
         require_keys_eq!(custody.key(), collateral_custody.key());
     };
@@ -150,37 +188,70 @@ pub fn open_position(ctx: Context<OpenPosition>, params: &OpenPositionParams) ->
     // compute position price
     let curtime = perpetuals.get_time()?;
 
-    let token_price = OraclePrice::new_from_oracle(
-        &ctx.accounts.custody_oracle_account.to_account_info(),
-        &custody.oracle,
-        curtime,
-        false,
-    )?;
+    // let token_price = OraclePrice::new_from_oracle(
+    //     &ctx.accounts.custody_oracle_account.to_account_info(),
+    //     &custody.oracle,
+    //     curtime,
+    //     false,
+    // )?;
 
-    let token_ema_price = OraclePrice::new_from_oracle(
-        &ctx.accounts.custody_oracle_account.to_account_info(),
-        &custody.oracle,
-        curtime,
-        custody.pricing.use_ema,
-    )?;
+    let custody_oracle = &ctx.accounts.custody_oracle_account;
+    let custody_ema_oracle = &ctx.accounts.custody_ema_oracle_account;
+    let collateral_custody_oracle = &ctx.accounts.collateral_custody_oracle_account;
+    let clock = &Clock::get();
 
-    let collateral_token_price = OraclePrice::new_from_oracle(
-        &ctx.accounts
-            .collateral_custody_oracle_account
-            .to_account_info(),
-        &collateral_custody.oracle,
-        curtime,
-        false,
-    )?;
+    let (oracle_price, oracle_ema_price) = match custody.oracle {
+        Oracle::PYTH(_) => {
+            // Both base and ema prices are in the same account
+            get_prices_from_pyth(custody_oracle, clock)
+        },
+        Oracle::SWITCHBOARD(_) => {
+            (
+                // Base and ema in separate accounts in case of switchboard
+                get_price_from_switchboard(custody_oracle, clock),
+                get_price_from_switchboard(&custody_ema_oracle.unwrap(), clock)
+            )
+        }
+    }?;
 
-    let collateral_token_ema_price = OraclePrice::new_from_oracle(
-        &ctx.accounts
-            .collateral_custody_oracle_account
-            .to_account_info(),
-        &collateral_custody.oracle,
-        curtime,
-        collateral_custody.pricing.use_ema,
-    )?;
+    let (collateral_oracle_price, collateral_oracle_ema_price) = match custody.oracle {
+        Oracle::PYTH(_) => {
+            // Both base and ema prices are in the same account
+            get_prices_from_pyth(collateral_custody_oracle, clock)
+        },
+        Oracle::SWITCHBOARD(_) => {
+            (
+                // Base and ema in separate accounts in case of switchboard
+                get_price_from_switchboard(collateral_custody_oracle, clock),
+                get_price_from_switchboard(&collateral_custody_ema_oracle.unwrap(), clock)
+            )
+        }
+    }?;
+
+    // let token_ema_price = OraclePrice::new_from_oracle(
+    //     &ctx.accounts.custody_oracle_account.to_account_info(),
+    //     &custody.oracle,
+    //     curtime,
+    //     custody.pricing.use_ema,
+    // )?;
+
+    // let collateral_token_price = OraclePrice::new_from_oracle(
+    //     &ctx.accounts
+    //         .collateral_custody_oracle_account
+    //         .to_account_info(),
+    //     &collateral_custody.oracle,
+    //     curtime,
+    //     false,
+    // )?;
+
+    // let collateral_token_ema_price = OraclePrice::new_from_oracle(
+    //     &ctx.accounts
+    //         .collateral_custody_oracle_account
+    //         .to_account_info(),
+    //     &collateral_custody.oracle,
+    //     curtime,
+    //     collateral_custody.pricing.use_ema,
+    // )?;
 
     let min_collateral_price = collateral_token_price
         .get_min_price(&collateral_token_ema_price, collateral_custody.is_stable)?;
