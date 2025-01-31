@@ -4,12 +4,13 @@ use {
     crate::{
         error::PerpetualsError,
         math,
-        state::{custody::Custody, oracle::OraclePrice, perpetuals::Perpetuals, pool::Pool},
+        state::{custody::Custody, perpetuals::Perpetuals, pool::Pool},
     },
     anchor_lang::prelude::*,
     anchor_spl::token::{Token, TokenAccount},
     solana_program::program_error::ProgramError,
 };
+use crate::oracle::OraclePrice;
 
 #[derive(Accounts)]
 #[instruction(params: SwapParams)]

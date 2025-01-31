@@ -1,7 +1,8 @@
 //! GetOraclePrice instruction handler
 
 use {
-    crate::state::{custody::Custody, oracle::OraclePrice, perpetuals::Perpetuals, pool::Pool},
+    crate::oracle::OraclePrice,
+    crate::state::{custody::Custody, perpetuals::Perpetuals, pool::Pool},
     anchor_lang::prelude::*,
 };
 

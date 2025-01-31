@@ -1,9 +1,9 @@
 //! GetExitPriceAndFee instruction handler
 
 use {
+    crate::oracle::OraclePrice,
     crate::state::{
         custody::Custody,
-        oracle::OraclePrice,
         perpetuals::{Perpetuals, PriceAndFee},
         pool::Pool,
         position::{Position, Side},

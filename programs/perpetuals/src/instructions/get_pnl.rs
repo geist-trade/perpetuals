@@ -1,9 +1,9 @@
 //! GetPnl instruction handler
 
 use {
+    crate::oracle::OraclePrice,
     crate::state::{
         custody::Custody,
-        oracle::OraclePrice,
         perpetuals::{Perpetuals, ProfitAndLoss},
         pool::Pool,
         position::Position,

@@ -1,9 +1,9 @@
 //! GetSwapAmountAndFees instruction handler
 
 use {
+    crate::oracle::OraclePrice,
     crate::state::{
         custody::Custody,
-        oracle::OraclePrice,
         perpetuals::{Perpetuals, SwapAmountAndFees},
         pool::Pool,
     },

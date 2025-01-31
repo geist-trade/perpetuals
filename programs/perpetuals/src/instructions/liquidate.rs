@@ -4,9 +4,9 @@ use {
     crate::{
         error::PerpetualsError,
         math,
+        oracle::OraclePrice,
         state::{
             custody::Custody,
-            oracle::OraclePrice,
             perpetuals::Perpetuals,
             pool::Pool,
             position::{Position, Side},

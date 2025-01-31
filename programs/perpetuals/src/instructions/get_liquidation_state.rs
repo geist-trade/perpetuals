@@ -1,8 +1,9 @@
 //! GetLiquidationState instruction handler
 
 use {
+    crate::oracle::OraclePrice,
     crate::state::{
-        custody::Custody, oracle::OraclePrice, perpetuals::Perpetuals, pool::Pool,
+        custody::Custody, perpetuals::Perpetuals, pool::Pool,
         position::Position,
     },
     anchor_lang::prelude::*,

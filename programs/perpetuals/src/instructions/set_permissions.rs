@@ -8,7 +8,7 @@ use {
     },
     anchor_lang::prelude::*,
 };
-use crate::state::*;
+use crate::state::admin::Admin;
 
 #[derive(Accounts)]
 pub struct SetPermissions<'info> {

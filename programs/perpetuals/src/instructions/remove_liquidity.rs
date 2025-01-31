@@ -6,7 +6,6 @@ use {
         math,
         state::{
             custody::Custody,
-            oracle::OraclePrice,
             perpetuals::Perpetuals,
             pool::{AumCalcMode, Pool},
         },
@@ -15,6 +14,7 @@ use {
     anchor_spl::token::{Mint, Token, TokenAccount},
     solana_program::program_error::ProgramError,
 };
+use crate::oracle::OraclePrice;
 
 #[derive(Accounts)]
 #[instruction(params: RemoveLiquidityParams)]

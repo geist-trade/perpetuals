@@ -6,7 +6,6 @@ use {
         error::PerpetualsError,
         math,
         state::{
-            oracle::{OracleParams, OraclePrice, OracleType},
             perpetuals::{Permissions, Perpetuals},
             position::{Position, Side},
         },
@@ -16,6 +15,11 @@ use {
 use anchor_spl::token::{
     Transfer,
     transfer
+};
+use crate::oracle::{
+    get_prices_from_pyth,
+    get_price_from_switchboard,
+    OraclePrice
 };
 
 #[derive(Copy, Clone, PartialEq, AnchorSerialize, AnchorDeserialize, Debug)]
@@ -145,14 +149,15 @@ pub enum Oracle {
 
 impl Oracle {
     pub fn from_account_info(
-        account: &AccountInfo
+        account: &AccountInfo,
+        clock: &Clock,
     ) -> Result<Self> {
         if account.owner.eq(&PYTH_PROGRAM_ID) {
-            get_price_from_pyth(oracle, &clock)?;
-            Ok(Oracle::Pyth(oracle.key()))
+            get_prices_from_pyth(account, &clock)?;
+            Ok(Oracle::Pyth(account.key()))
         } else if account.owner.eq(&SWITCHBOARD_PROGRAM_ID) {
-            get_price_from_switchboard(oracle, &clock)?;
-            Ok(Oracle::Switchboard(oracle.key()))
+            get_price_from_switchboard(account, &clock)?;
+            Ok(Oracle::Switchboard(account.key()))
         } else {
             Err(PerpetualsError::InvalidOracle.into())
         }
@@ -196,50 +201,6 @@ pub struct Custody {
     pub token_account_bump: u8,
 }
 
-#[derive(Copy, Clone, PartialEq, AnchorSerialize, AnchorDeserialize, Default, Debug)]
-pub struct DeprecatedPricingParams {
-    pub use_ema: bool,
-    // whether to account for unrealized pnl in assets under management calculations
-    pub use_unrealized_pnl_in_aum: bool,
-    // pricing params have implied BPS_DECIMALS decimals
-    pub trade_spread_long: u64,
-    pub trade_spread_short: u64,
-    pub swap_spread: u64,
-    pub min_initial_leverage: u64,
-    pub max_leverage: u64,
-    // max_user_profit = position_size * max_payoff_mult
-    pub max_payoff_mult: u64,
-}
-
-#[account]
-#[derive(Default, Debug)]
-pub struct DeprecatedCustody {
-    // static parameters
-    pub pool: Pubkey,
-    pub mint: Pubkey,
-    pub token_account: Pubkey,
-    pub decimals: u8,
-    pub is_stable: bool,
-    pub oracle: OracleParams,
-    pub pricing: PricingParams,
-    pub permissions: Permissions,
-    pub fees: Fees,
-    pub borrow_rate: BorrowRateParams,
-
-    // dynamic variables
-    pub assets: Assets,
-    pub collected_fees: FeesStats,
-    pub volume_stats: VolumeStats,
-    pub trade_stats: TradeStats,
-    pub long_positions: PositionStats,
-    pub short_positions: PositionStats,
-    pub borrow_rate_state: BorrowRateState,
-
-    // bumps for address validation
-    pub bump: u8,
-    pub token_account_bump: u8,
-}
-
 impl Default for FeesMode {
     fn default() -> Self {
         Self::Linear
@@ -260,12 +221,6 @@ impl Fees {
             && self.protocol_share as u128 <= Perpetuals::BPS_POWER
             && self.fee_max as u128 <= Perpetuals::BPS_POWER
             && self.fee_optimal as u128 <= Perpetuals::BPS_POWER
-    }
-}
-
-impl OracleParams {
-    pub fn validate(&self) -> bool {
-        self.oracle_type == OracleType::None || self.oracle_account != Pubkey::default()
     }
 }
 
@@ -654,7 +609,7 @@ impl Custody {
     // Tbh this should be aggregated across entire protocol
     // to be able to withdraw in one instruction.
     // TODO: Aggregate fees on protocol-level.
-    pub fn withdraw_fees(
+    pub fn withdraw_fees<'info>(
         &self,
         from: AccountInfo<'info>,
         to: AccountInfo<'info>,
@@ -690,10 +645,6 @@ impl Custody {
             Oracle::SWITCHBOARD(_) => true
         }
     }
-}
-
-impl DeprecatedCustody {
-    pub const LEN: usize = 8 + std::mem::size_of::<DeprecatedCustody>();
 }
 
 #[cfg(test)]

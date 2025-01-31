@@ -12,6 +12,7 @@ use {
     anchor_lang::prelude::*,
     anchor_spl::token::{Token, TokenAccount},
 };
+use crate::state::admin::Admin;
 
 #[derive(Accounts)]
 #[instruction(

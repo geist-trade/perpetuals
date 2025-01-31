@@ -1,6 +1,6 @@
 //! AddCustody instruction handler
 use crate::{constants::{
-    CUSTODY_SEED, PERPETUALS_SEED
+    CUSTODY_SEED, PERPETUALS_SEED, POOL_SEED, CUSTODY_TOKEN_ACCOUNT_SEED
 }, state::custody::Oracle};
 use {
     crate::{
@@ -123,7 +123,7 @@ pub fn add_custody<'info>(
 
     let oracle = Oracle::from_account_info(oracle_account)?;
     custody.oracle = oracle;
-    
+
     custody.pool = pool.key();
     custody.mint = ctx.accounts.custody_token_mint.key();
     custody.token_account = ctx.accounts.custody_token_account.key();

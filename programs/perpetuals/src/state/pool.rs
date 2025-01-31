@@ -4,7 +4,6 @@ use {
         math,
         state::{
             custody::{Custody, FeesMode},
-            oracle::OraclePrice,
             perpetuals::Perpetuals,
             position::{Position, Side},
         },
@@ -12,6 +11,7 @@ use {
     anchor_lang::prelude::*,
     std::cmp::Ordering,
 };
+use crate::oracle::OraclePrice;
 
 #[derive(Copy, Clone, PartialEq, AnchorSerialize, AnchorDeserialize, Debug)]
 pub enum AumCalcMode {

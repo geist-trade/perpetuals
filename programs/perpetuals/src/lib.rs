@@ -101,20 +101,6 @@ pub mod perpetuals {
         instructions::withdraw_sol_fees(ctx, &params)
     }
 
-    pub fn upgrade_custody<'info>(
-        ctx: Context<'_, '_, '_, 'info, UpgradeCustody<'info>>,
-        params: UpgradeCustodyParams,
-    ) -> Result<u8> {
-        instructions::upgrade_custody(ctx, &params)
-    }
-
-    pub fn set_custom_oracle_price<'info>(
-        ctx: Context<'_, '_, '_, 'info, SetCustomOraclePrice<'info>>,
-        params: SetCustomOraclePriceParams,
-    ) -> Result<u8> {
-        instructions::set_custom_oracle_price(ctx, &params)
-    }
-
     // test instructions
 
     pub fn set_test_time<'info>(
@@ -240,14 +226,5 @@ pub mod perpetuals {
         params: GetLpTokenPriceParams,
     ) -> Result<u64> {
         instructions::get_lp_token_price(ctx, &params)
-    }
-
-    // This instruction must be part of a larger transaction where the **first** instruction
-    // is an ed25519 verification of the serialized oracle price update params.
-    pub fn set_custom_oracle_price_permissionless(
-        ctx: Context<SetCustomOraclePricePermissionless>,
-        params: SetCustomOraclePricePermissionlessParams,
-    ) -> Result<()> {
-        instructions::set_custom_oracle_price_permissionless(ctx, &params)
     }
 }

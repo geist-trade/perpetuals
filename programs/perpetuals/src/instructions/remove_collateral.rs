@@ -6,7 +6,6 @@ use {
         math,
         state::{
             custody::Custody,
-            oracle::OraclePrice,
             perpetuals::Perpetuals,
             pool::Pool,
             position::{Position, Side},
@@ -16,6 +15,7 @@ use {
     anchor_spl::token::{Token, TokenAccount},
     solana_program::program_error::ProgramError,
 };
+use crate::oracle::OraclePrice;
 
 #[derive(Accounts)]
 #[instruction(params: RemoveCollateralParams)]

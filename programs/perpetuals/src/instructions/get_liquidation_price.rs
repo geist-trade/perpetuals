@@ -1,10 +1,11 @@
 //! GetLiquidationPrice instruction handler
 
 use {
+    crate::oracle::OraclePrice,
     crate::{
         math,
         state::{
-            custody::Custody, oracle::OraclePrice, perpetuals::Perpetuals, pool::Pool,
+            custody::Custody, perpetuals::Perpetuals, pool::Pool,
             position::Position,
         },
     },
