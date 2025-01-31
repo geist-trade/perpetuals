@@ -8,7 +8,6 @@ use {
         state::{
             custody::{BorrowRateParams, Custody, Fees, PricingParams},
             multisig::{AdminInstruction, Multisig},
-            oracle::OracleParams,
             perpetuals::{Permissions, Perpetuals},
             pool::{Pool, TokenRatios},
         },
@@ -90,7 +89,6 @@ pub struct AddCustodyParams {
     pub pool_id: u64,
     pub is_stable: bool,
     pub is_virtual: bool,
-    pub oracle: OracleParams,
     pub pricing: PricingParams,
     pub permissions: Permissions,
     pub fees: Fees,
@@ -102,28 +100,26 @@ pub fn add_custody<'info>(
     ctx: Context<'_, '_, '_, 'info, AddCustody<'info>>,
     params: &AddCustodyParams,
 ) -> Result<u8> {
-    // TODO: Check what this does under the hood
     if params.ratios.len() != ctx.accounts.pool.ratios.len() + 1 {
         return Err(ProgramError::InvalidArgument.into());
     }
 
     let pool = ctx.accounts.pool.as_mut();
 
-    // update pool data
     pool.custodies.push(ctx.accounts.custody.key());
-    // Why clone this entire thing instead of just adding?
-    // Possibly this works due to being admin-only - could need a fix?
+    // Adding new custody will overwrite `ratios` sitting in the pool.
+    // Possibly an attack vector in case of fully permissionless market.
     pool.ratios = params.ratios.clone();
     if !pool.validate() {
         return err!(PerpetualsError::InvalidPoolConfig);
     }
 
+    let clock = Clock::get()?;
     let custody = ctx.accounts.custody.as_mut();
     let oracle_account = &ctx.accounts.oracle_account;
 
-    let oracle = Oracle::from_account_info(oracle_account)?;
+    let oracle = Oracle::from_account_info(oracle_accoun, &clock)?;
     custody.oracle = oracle;
-
     custody.pool = pool.key();
     custody.mint = ctx.accounts.custody_token_mint.key();
     custody.token_account = ctx.accounts.custody_token_account.key();

@@ -15,7 +15,7 @@ use {
 #[derive(Accounts)]
 pub struct GetLiquidationPrice<'info> {
     #[account(
-        seeds = [b"perpetuals"],
+        seeds = [PERPETUALS_SEED.as_bytes()],
         bump = perpetuals.perpetuals_bump
     )]
     pub perpetuals: Box<Account<'info, Perpetuals>>,
@@ -38,7 +38,7 @@ pub struct GetLiquidationPrice<'info> {
     pub position: Box<Account<'info, Position>>,
 
     #[account(
-        seeds = [b"custody",
+        seeds = [CUSTODY_SEED.as_bytes(),
                  pool.key().as_ref(),
                  custody.mint.as_ref()],
         bump = custody.bump
@@ -65,6 +65,7 @@ pub struct GetLiquidationPrice<'info> {
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct GetLiquidationPriceParams {
+    // what do these params really do anyway?
     add_collateral: u64,
     remove_collateral: u64,
 }

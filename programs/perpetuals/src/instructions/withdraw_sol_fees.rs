@@ -32,7 +32,7 @@ pub struct WithdrawSolFees<'info> {
     pub transfer_authority: AccountInfo<'info>,
 
     #[account(
-        seeds = [b"perpetuals"],
+        seeds = [PERPETUALS_SEED.as_bytes()],
         bump = perpetuals.perpetuals_bump
     )]
     pub perpetuals: Box<Account<'info, Perpetuals>>,

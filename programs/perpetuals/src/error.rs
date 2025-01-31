@@ -64,4 +64,8 @@ pub enum PerpetualsError {
     PermissionlessOracleSignerMismatch,
     #[msg("Signed message does not match instruction params")]
     PermissionlessOracleMessageMismatch,
+    #[msg("PriceError")]
+    PriceError,
+    #[msg("AccountMapMissingEntry")]
+    AccountMapMissingEntry,
 }

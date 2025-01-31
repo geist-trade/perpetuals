@@ -3,7 +3,7 @@ use crate::{state::custody::Oracle};
 use crate::error::PerpetualsError;
 use crate::error::*;
 use crate::state::*;
-use super::{get_price_from_switchboard, get_prices_from_pyth};
+use super::{get_price_from_switchboard, get_price_from_pyth};
 use crate::state::perpetuals::Perpetuals;
 use crate::math;
 
@@ -13,7 +13,7 @@ const ORACLE_MAX_PRICE: u64 = (1 << 28) - 1;
 
 #[derive(Debug)]
 pub struct OraclePrice {
-    pub price: i64,
+    pub price: u64,
     pub exponent: i32,
 }
 
@@ -34,11 +34,10 @@ impl OraclePrice {
         oracle_account: &AccountInfo,
         clock: &Clock,
         oracle_type: Oracle,
-        current_time: i64,
         use_ema: bool,
     ) -> Result<Self> {
         match oracle_type {
-            Oracle::PYTH(_) => get_prices_from_pyth(oracle_account, clock),
+            Oracle::PYTH(_) => get_price_from_pyth(oracle_account, clock, use_ema),
             Oracle::SWITCHBOARD(_) => get_price_from_switchboard(oracle_account, &clock),
             _ => err!(PerpetualsError::UnsupportedOracle),
         }

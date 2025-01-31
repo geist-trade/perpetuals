@@ -14,7 +14,7 @@ use {
 #[derive(Accounts)]
 pub struct GetSwapAmountAndFees<'info> {
     #[account(
-        seeds = [b"perpetuals"],
+        seeds = [PERPETUALS_SEED.as_bytes()],
         bump = perpetuals.perpetuals_bump
     )]
     pub perpetuals: Box<Account<'info, Perpetuals>>,
@@ -27,7 +27,7 @@ pub struct GetSwapAmountAndFees<'info> {
     pub pool: Box<Account<'info, Pool>>,
 
     #[account(
-        seeds = [b"custody",
+        seeds = [CUSTODY_SEED.as_bytes(),
                  pool.key().as_ref(),
                  receiving_custody.mint.as_ref()],
         bump = receiving_custody.bump
@@ -41,7 +41,7 @@ pub struct GetSwapAmountAndFees<'info> {
     pub receiving_custody_oracle_account: AccountInfo<'info>,
 
     #[account(
-        seeds = [b"custody",
+        seeds = [CUSTODY_SEED.as_bytes(),
                  pool.key().as_ref(),
                  dispensing_custody.mint.as_ref()],
         bump = dispensing_custody.bump

@@ -6,7 +6,6 @@ use {
         state::{
             custody::{BorrowRateParams, Custody, Fees, PricingParams},
             multisig::{AdminInstruction, Multisig},
-            oracle::OracleParams,
             perpetuals::Permissions,
             pool::{Pool, TokenRatios},
         },
@@ -36,7 +35,7 @@ pub struct SetCustodyConfig<'info> {
 
     #[account(
         mut,
-        seeds = [b"custody",
+        seeds = [CUSTODY_SEED.as_bytes(),
                  pool.key().as_ref(),
                  custody.mint.as_ref()],
         bump
@@ -48,13 +47,15 @@ pub struct SetCustodyConfig<'info> {
 pub struct SetCustodyConfigParams {
     pub is_stable: bool,
     pub is_virtual: bool,
-    pub oracle: OracleParams,
     pub pricing: PricingParams,
     pub permissions: Permissions,
     pub fees: Fees,
     pub borrow_rate: BorrowRateParams,
     pub ratios: Vec<TokenRatios>,
 }
+
+// Should market creator be able to update the market?
+// TODO: Check if attack vector
 
 pub fn set_custody_config<'info>(
     ctx: Context<'_, '_, '_, 'info, SetCustodyConfig<'info>>,
@@ -76,7 +77,8 @@ pub fn set_custody_config<'info>(
     let custody = ctx.accounts.custody.as_mut();
     custody.is_stable = params.is_stable;
     custody.is_virtual = params.is_virtual;
-    custody.oracle = params.oracle;
+    // TODO: Update this
+    // custody.oracle = params.oracle;
     custody.pricing = params.pricing;
     custody.permissions = params.permissions;
     custody.fees = params.fees;

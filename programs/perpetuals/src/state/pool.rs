@@ -724,6 +724,10 @@ impl Pool {
 
             require_keys_eq!(accounts[oracle_idx].key(), custody.oracle.oracle_account);
 
+            // Instead of the above, implement an account map
+            // that will look for a particular public key 
+            // in the remaining_accounts
+
             let token_price = OraclePrice::new_from_oracle(
                 &accounts[oracle_idx],
                 &custody.oracle,

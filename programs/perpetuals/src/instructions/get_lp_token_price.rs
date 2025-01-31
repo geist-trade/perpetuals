@@ -16,7 +16,7 @@ use {
 #[derive(Accounts)]
 pub struct GetLpTokenPrice<'info> {
     #[account(
-        seeds = [b"perpetuals"],
+        seeds = [PERPETUALS_SEED.as_bytes()],
         bump = perpetuals.perpetuals_bump
     )]
     pub perpetuals: Box<Account<'info, Perpetuals>>,
@@ -29,7 +29,7 @@ pub struct GetLpTokenPrice<'info> {
     pub pool: Box<Account<'info, Pool>>,
 
     #[account(
-        seeds = [b"lp_token_mint",
+        seeds = [LP_TOKEN_MINT_SEED.to_bytes(),
                  pool.key().as_ref()],
         bump = pool.lp_token_bump
     )]

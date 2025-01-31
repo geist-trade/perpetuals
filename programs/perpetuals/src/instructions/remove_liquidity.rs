@@ -44,7 +44,7 @@ pub struct RemoveLiquidity<'info> {
     pub transfer_authority: AccountInfo<'info>,
 
     #[account(
-        seeds = [b"perpetuals"],
+        seeds = [PERPETUALS_SEED.as_bytes()],
         bump = perpetuals.perpetuals_bump
     )]
     pub perpetuals: Box<Account<'info, Perpetuals>>,
@@ -59,7 +59,7 @@ pub struct RemoveLiquidity<'info> {
 
     #[account(
         mut,
-        seeds = [b"custody",
+        seeds = [CUSTODY_SEED.as_bytes(),
                  pool.key().as_ref(),
                  custody.mint.as_ref()],
         bump = custody.bump
@@ -74,7 +74,7 @@ pub struct RemoveLiquidity<'info> {
 
     #[account(
         mut,
-        seeds = [b"custody_token_account",
+        seeds = [CUSTODY_TOKEN_ACCOUNT_SEED.as_bytes(),
                  pool.key().as_ref(),
                  custody.mint.as_ref()],
         bump = custody.token_account_bump
@@ -83,7 +83,7 @@ pub struct RemoveLiquidity<'info> {
 
     #[account(
         mut,
-        seeds = [b"lp_token_mint",
+        seeds = [LP_TOKEN_MINT_SEED.to_bytes(),
                  pool.key().as_ref()],
         bump = pool.lp_token_bump
     )]

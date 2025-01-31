@@ -8,6 +8,7 @@ pub mod math;
 pub mod state;
 pub mod constants;
 pub mod oracle;
+pub mod helpers;
 
 use {
     anchor_lang::prelude::*,
@@ -58,21 +59,6 @@ pub mod perpetuals {
         instructions::add_custody(ctx, &params)
     }
 
-    // It should be illegal to remove custody if permissionless.
-    // pub fn remove_custody<'info>(
-    //     ctx: Context<'_, '_, '_, 'info, RemoveCustody<'info>>,
-    //     params: RemoveCustodyParams,
-    // ) -> Result<u8> {
-    //     instructions::remove_custody(ctx, &params)
-    // }
-
-    // pub fn set_admin_signers<'info>(
-    //     ctx: Context<'_, '_, '_, 'info, SetAdminSigners<'info>>,
-    //     params: SetAdminSignersParams,
-    // ) -> Result<u8> {
-    //     instructions::set_admin_signers(ctx, &params)
-    // }
-
     pub fn set_custody_config<'info>(
         ctx: Context<'_, '_, '_, 'info, SetCustodyConfig<'info>>,
         params: SetCustodyConfigParams,
@@ -112,6 +98,7 @@ pub mod perpetuals {
 
     // public instructions
 
+    // Should swaps even be enabled?
     pub fn swap(ctx: Context<Swap>, params: SwapParams) -> Result<()> {
         instructions::swap(ctx, &params)
     }
@@ -198,13 +185,6 @@ pub mod perpetuals {
         params: GetLiquidationStateParams,
     ) -> Result<u8> {
         instructions::get_liquidation_state(ctx, &params)
-    }
-
-    pub fn get_oracle_price(
-        ctx: Context<GetOraclePrice>,
-        params: GetOraclePriceParams,
-    ) -> Result<u64> {
-        instructions::get_oracle_price(ctx, &params)
     }
 
     pub fn get_swap_amount_and_fees(

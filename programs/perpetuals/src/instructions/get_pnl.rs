@@ -14,7 +14,7 @@ use {
 #[derive(Accounts)]
 pub struct GetPnl<'info> {
     #[account(
-        seeds = [b"perpetuals"],
+        seeds = [PERPETUALS_SEED.as_bytes()],
         bump = perpetuals.perpetuals_bump
     )]
     pub perpetuals: Box<Account<'info, Perpetuals>>,
@@ -37,7 +37,7 @@ pub struct GetPnl<'info> {
     pub position: Box<Account<'info, Position>>,
 
     #[account(
-        seeds = [b"custody",
+        seeds = [CUSTODY_SEED.as_bytes(),
                  pool.key().as_ref(),
                  custody.mint.as_ref()],
         bump = custody.bump

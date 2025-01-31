@@ -1,9 +1,9 @@
 //! GetEntryPriceAndFee instruction handler
 
 use {
+    crate::oracle::OraclePrice,
     crate::state::{
         custody::Custody,
-        oracle::OraclePrice,
         perpetuals::{NewPositionPricesAndFee, Perpetuals},
         pool::Pool,
         position::{Position, Side},
@@ -15,7 +15,7 @@ use {
 #[derive(Accounts)]
 pub struct GetEntryPriceAndFee<'info> {
     #[account(
-        seeds = [b"perpetuals"],
+        seeds = [PERPETUALS_SEED.as_bytes()],
         bump = perpetuals.perpetuals_bump
     )]
     pub perpetuals: Box<Account<'info, Perpetuals>>,
@@ -28,7 +28,7 @@ pub struct GetEntryPriceAndFee<'info> {
     pub pool: Box<Account<'info, Pool>>,
 
     #[account(
-        seeds = [b"custody",
+        seeds = [CUSTODY_SEED.as_bytes(),
                  pool.key().as_ref(),
                  custody.mint.as_ref()],
         bump = custody.bump
@@ -42,7 +42,7 @@ pub struct GetEntryPriceAndFee<'info> {
     pub custody_oracle_account: AccountInfo<'info>,
 
     #[account(
-        seeds = [b"custody",
+        seeds = [CUSTODY_SEED.as_bytes(),
                  pool.key().as_ref(),
                  collateral_custody.mint.as_ref()],
         bump = collateral_custody.bump

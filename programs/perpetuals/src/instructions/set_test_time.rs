@@ -25,7 +25,7 @@ pub struct SetTestTime<'info> {
 
     #[account(
         mut,
-        seeds = [b"perpetuals"],
+        seeds = [PERPETUALS_SEED.as_bytes()],
         bump = perpetuals.perpetuals_bump
     )]
     pub perpetuals: Box<Account<'info, Perpetuals>>,

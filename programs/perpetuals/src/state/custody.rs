@@ -17,7 +17,7 @@ use anchor_spl::token::{
     transfer
 };
 use crate::oracle::{
-    get_prices_from_pyth,
+    get_price_from_pyth,
     get_price_from_switchboard,
     OraclePrice
 };
@@ -153,7 +153,7 @@ impl Oracle {
         clock: &Clock,
     ) -> Result<Self> {
         if account.owner.eq(&PYTH_PROGRAM_ID) {
-            get_prices_from_pyth(account, &clock)?;
+            get_price_from_pyth(account, &clock, false)?;
             Ok(Oracle::Pyth(account.key()))
         } else if account.owner.eq(&SWITCHBOARD_PROGRAM_ID) {
             get_price_from_switchboard(account, &clock)?;
@@ -181,7 +181,7 @@ pub struct Custody {
     pub is_stable: bool,
     pub is_virtual: bool,
     pub oracle: Oracle,
-    pub ema_oracle: Oracle, // It's always switchboard tho
+    pub ema_oracle: Option<Oracle>, // if present, always switchboard
     pub pricing: PricingParams,
     pub permissions: Permissions,
     pub fees: Fees,

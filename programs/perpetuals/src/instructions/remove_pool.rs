@@ -37,7 +37,7 @@ pub struct RemovePool<'info> {
         realloc = Perpetuals::LEN + (perpetuals.pools.len() - 1) * 32,
         realloc::payer = admin,
         realloc::zero = false,
-        seeds = [b"perpetuals"],
+        seeds = [PERPETUALS_SEED.as_bytes()],
         bump = perpetuals.perpetuals_bump
     )]
     pub perpetuals: Box<Account<'info, Perpetuals>>,
