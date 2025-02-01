@@ -7,9 +7,9 @@ use {
         },
         error::PerpetualsError,
         math,
-        oracle::{get_price_from_switchboard, get_prices_from_pyth, OraclePrice},
+        oracle::OraclePrice,
         state::{
-            custody::{Custody, Oracle},
+            custody::Custody,
             perpetuals::Perpetuals,
             pool::Pool,
             position::{Position, Side},
@@ -88,7 +88,7 @@ pub struct OpenPosition<'info> {
     // This oracle is dependent on the main oracle, so it cant be aggregated in one account.
     #[account(
         mut,
-        constraint = custody.ema_oracle.is_none() || custody_ema_oracle_account.key() == custody.ema_oracle.unwrap().key() @ PerpetualsError::InvalidEmaOracle
+        constraint = custody.ema_oracle.is_none() || Some(custody_ema_oracle_account.key()) == custody.ema_oracle.map(|o| o.key()) @ PerpetualsError::InvalidEmaOracle
     )]
     pub custody_ema_oracle_account: Option<AccountInfo<'info>>,
 
@@ -114,7 +114,7 @@ pub struct OpenPosition<'info> {
     // This oracle is dependent on the main oracle, so it cant be aggregated in one account.
     #[account(
         mut,
-        constraint = collateral_custody.ema_oracle.is_none() || collateral_custody_ema_oracle_account.key() == collateral_custody.ema_oracle.unwrap().key() @ PerpetualsError::InvalidEmaOracle
+        constraint = collateral_custody.ema_oracle.is_none() || Some(collateral_custody_ema_oracle_account.key()) == collateral_custody.ema_oracle.map(|o| o.key()) @ PerpetualsError::InvalidEmaOracle
     )]
     pub collateral_custody_ema_oracle_account: Option<AccountInfo<'info>>,
 
@@ -199,52 +199,19 @@ pub fn open_position(ctx: Context<OpenPosition>, params: &OpenPositionParams) ->
     // compute position price
     let curtime = perpetuals.get_time()?;
 
-    // let token_price = OraclePrice::new_from_oracle(
-    //     &ctx.accounts.custody_oracle_account.to_account_info(),
-    //     &custody.oracle,
-    //     curtime,
-    //     false,
-    // )?;
-
-    let custody_oracle = &ctx.accounts.custody_oracle_account;
-    let custody_ema_oracle = &ctx.accounts.custody_ema_oracle_account;
-    let collateral_custody_oracle = &ctx.accounts.collateral_custody_oracle_account;
-    let collateral_custody_ema_oracle = &ctx.accounts.collateral_custody_ema_oracle_account;
     let clock = &Clock::get()?;
 
-    let (token_price, token_ema_price) = match custody.oracle {
-        Oracle::Pyth(_) => {
-            // Both base and ema prices are in the same account
-            get_prices_from_pyth(custody_oracle, clock)?
-        }
-        Oracle::Switchboard(_) => {
-            let ema_oracle = custody_ema_oracle
-                .as_ref()
-                .ok_or(PerpetualsError::EmaOracleRequired)?;
-            (
-                // Base and ema in separate accounts in case of switchboard
-                get_price_from_switchboard(custody_oracle, clock)?,
-                get_price_from_switchboard(ema_oracle, clock)?,
-            )
-        }
-    };
+    let (token_price, token_ema_price) = custody.oracle.extract_prices(
+        &ctx.accounts.custody_oracle_account,
+        &ctx.accounts.custody_ema_oracle_account,
+        clock,
+    )?;
 
-    let (collateral_price, collateral_ema_price) = match custody.oracle {
-        Oracle::Pyth(_) => {
-            // Both base and ema prices are in the same account
-            get_prices_from_pyth(collateral_custody_oracle, clock)?
-        }
-        Oracle::Switchboard(_) => {
-            let ema_oracle = collateral_custody_ema_oracle
-                .as_ref()
-                .ok_or(PerpetualsError::EmaOracleRequired)?;
-            (
-                // Base and ema in separate accounts in case of switchboard
-                get_price_from_switchboard(collateral_custody_oracle, clock)?,
-                get_price_from_switchboard(ema_oracle, clock)?,
-            )
-        }
-    };
+    let (collateral_price, collateral_ema_price) = custody.oracle.extract_prices(
+        &ctx.accounts.collateral_custody_oracle_account,
+        &ctx.accounts.collateral_custody_ema_oracle_account,
+        clock,
+    )?;
 
     let min_collateral_price =
         collateral_price.get_min_price(&collateral_ema_price, collateral_custody.is_stable)?;

@@ -3,7 +3,9 @@ use {
         constants::CUSTODY_SEED,
         error::PerpetualsError,
         math,
-        oracle::{get_price_from_pyth, get_price_from_switchboard, OraclePrice},
+        oracle::{
+            get_price_from_pyth, get_price_from_switchboard, get_prices_from_pyth, OraclePrice,
+        },
         state::{
             perpetuals::{Permissions, Perpetuals},
             position::{Position, Side},
@@ -161,6 +163,30 @@ impl Oracle {
 
     pub fn validate(&self) -> bool {
         true
+    }
+
+    pub fn extract_prices(
+        &self,
+        custody_oracle: &AccountInfo,
+        custody_ema_oracle: &Option<AccountInfo>,
+        clock: &Clock,
+    ) -> Result<(OraclePrice, OraclePrice)> {
+        Ok(match *self {
+            Oracle::Pyth(_) => {
+                // Both base and ema prices are in the same account
+                get_prices_from_pyth(custody_oracle, clock)?
+            }
+            Oracle::Switchboard(_) => {
+                let ema_oracle = custody_ema_oracle
+                    .as_ref()
+                    .ok_or(PerpetualsError::EmaOracleRequired)?;
+                (
+                    // Base and ema in separate accounts in case of switchboard
+                    get_price_from_switchboard(custody_oracle, clock)?,
+                    get_price_from_switchboard(ema_oracle, clock)?,
+                )
+            }
+        })
     }
 }
 

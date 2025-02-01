@@ -3,13 +3,13 @@
 use {
     crate::{
         constants::{CUSTODY_SEED, PERPETUALS_SEED, POOL_SEED, POSITION_SEED},
-        oracle::OraclePrice,
         state::{
             custody::Custody,
             perpetuals::{Perpetuals, PriceAndFee},
             pool::Pool,
             position::{Position, Side},
         },
+        PerpetualsError,
     },
     anchor_lang::prelude::*,
 };
@@ -65,6 +65,11 @@ pub struct GetExitPriceAndFee<'info> {
     pub custody_oracle_account: AccountInfo<'info>,
 
     #[account(
+        constraint = custody.ema_oracle.is_none() || Some(custody_ema_oracle_account.key()) == custody.ema_oracle.map(|o| o.key()) @ PerpetualsError::InvalidEmaOracle
+    )]
+    pub custody_ema_oracle_account: Option<AccountInfo<'info>>,
+
+    #[account(
         seeds = [CUSTODY_SEED.as_bytes(),
                  pool.key().as_ref(),
                  collateral_custody.mint.as_ref()],
@@ -77,6 +82,11 @@ pub struct GetExitPriceAndFee<'info> {
         constraint = collateral_custody_oracle_account.key() == collateral_custody.oracle.key()
     )]
     pub collateral_custody_oracle_account: AccountInfo<'info>,
+
+    #[account(
+        constraint = collateral_custody.ema_oracle.is_none() || Some(collateral_custody_ema_oracle_account.key()) == collateral_custody.ema_oracle.map(|o| o.key()) @ PerpetualsError::InvalidEmaOracle
+    )]
+    pub collateral_custody_ema_oracle_account: Option<AccountInfo<'info>>,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -96,36 +106,18 @@ pub fn get_exit_price_and_fee(
 
     let clock = &Clock::get()?;
 
-    // match custody.oracle. {
-    //     Oracle::Pyth(_) => {
-    //         todo!()
-    //     }
-    // }
-
-    // TODO: Separate basic and EMA oracles flow to increase readability of the code.
-
-    let token_price = OraclePrice::new_from_oracle(
-        &ctx.accounts.custody_oracle_account.to_account_info(),
+    let (token_price, token_ema_price) = custody.oracle.extract_prices(
+        &ctx.accounts.custody_oracle_account,
+        &ctx.accounts.custody_ema_oracle_account,
         clock,
-        custody.oracle,
-        false,
     )?;
 
-    let token_ema_price = OraclePrice::new_from_oracle(
-        &ctx.accounts.custody_oracle_account.to_account_info(),
-        clock,
-        custody.oracle,
-        custody.pricing.use_ema,
-    )?;
-
-    let collateral_token_ema_price = OraclePrice::new_from_oracle(
-        &ctx.accounts
-            .collateral_custody_oracle_account
-            .to_account_info(),
-        clock,
-        collateral_custody.oracle,
-        collateral_custody.pricing.use_ema,
-    )?;
+    let (_collateral_token_price, collateral_token_ema_price) =
+        collateral_custody.oracle.extract_prices(
+            &ctx.accounts.collateral_custody_oracle_account,
+            &ctx.accounts.collateral_custody_ema_oracle_account,
+            clock,
+        )?;
 
     let price = pool.get_exit_price(&token_price, &token_ema_price, position.side, custody)?;
 
