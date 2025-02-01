@@ -27,7 +27,7 @@ pub fn get_price_from_pyth(
         .map_err(|_| PerpetualsError::PriceError)?;
 
     let price = oracle
-        .get_price_no_older_than(&clock, ORACLE_MAXIMUM_AGE, &oracle.price_message.feed_id)
+        .get_price_no_older_than(clock, ORACLE_MAXIMUM_AGE, &oracle.price_message.feed_id)
         .map_err(|_| PerpetualsError::PriceError)?;
 
     // if above succeeds, ema should work too

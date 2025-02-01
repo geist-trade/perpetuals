@@ -3,11 +3,7 @@ use {
     crate::{
         constants::{LP_TOKEN_MINT_SEED, PERPETUALS_SEED, POOL_SEED},
         error::PerpetualsError,
-        state::{
-            multisig::{AdminInstruction, Multisig},
-            perpetuals::Perpetuals,
-            pool::Pool,
-        },
+        state::{perpetuals::Perpetuals, pool::Pool},
     },
     anchor_lang::prelude::*,
     anchor_spl::token::{Mint, Token},

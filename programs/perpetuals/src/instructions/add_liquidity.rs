@@ -19,7 +19,6 @@ use {
     anchor_lang::prelude::*,
     anchor_spl::token::{Mint, Token, TokenAccount},
     solana_program::program_error::ProgramError,
-    std::collections::BTreeMap,
 };
 
 #[derive(Accounts)]
@@ -123,7 +122,7 @@ pub fn add_liquidity(ctx: Context<AddLiquidity>, params: &AddLiquidityParams) ->
         PerpetualsError::InstructionNotAllowed
     );
 
-    let account_map = AccountMap::from_remaining_accounts(&ctx.remaining_accounts);
+    let account_map = AccountMap::from_remaining_accounts(ctx.remaining_accounts);
 
     // validate inputs
     msg!("Validate inputs");
@@ -155,7 +154,7 @@ pub fn add_liquidity(ctx: Context<AddLiquidity>, params: &AddLiquidityParams) ->
     };
     let token_ema_price = OraclePrice::new_from_oracle(
         oracle_account,
-        &clock,
+        clock,
         custody.oracle,
         custody.pricing.use_ema,
     )?;
@@ -192,7 +191,7 @@ pub fn add_liquidity(ctx: Context<AddLiquidity>, params: &AddLiquidityParams) ->
     // compute assets under management
     msg!("Compute assets under management");
     let pool_amount_usd =
-        pool.get_assets_under_management_usd(AumCalcMode::Max, &account_map, &clock)?;
+        pool.get_assets_under_management_usd(AumCalcMode::Max, &account_map, clock)?;
 
     // compute amount of lp tokens to mint
     let no_fee_amount = math::checked_sub(params.amount_in, fee_amount)?;
@@ -252,7 +251,7 @@ pub fn add_liquidity(ctx: Context<AddLiquidity>, params: &AddLiquidityParams) ->
     // update pool stats
     msg!("Update pool stats");
     custody.exit(&crate::ID)?;
-    pool.aum_usd = pool.get_assets_under_management_usd(AumCalcMode::EMA, &account_map, &clock)?;
+    pool.aum_usd = pool.get_assets_under_management_usd(AumCalcMode::EMA, &account_map, clock)?;
 
     Ok(())
 }

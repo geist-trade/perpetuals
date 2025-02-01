@@ -5,7 +5,6 @@ use {
         error::PerpetualsError,
         state::{
             custody::{BorrowRateParams, Custody, Fees, Oracle, PricingParams},
-            multisig::{AdminInstruction, Multisig},
             perpetuals::{Permissions, Perpetuals},
             pool::{Pool, TokenRatios},
         },
@@ -14,10 +13,10 @@ use {
     anchor_spl::token::{Mint, Token, TokenAccount},
 };
 
+#[derive(Accounts)]
 #[instruction(
     args: AddCustodyParams
 )]
-#[derive(Accounts)]
 pub struct AddCustody<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,

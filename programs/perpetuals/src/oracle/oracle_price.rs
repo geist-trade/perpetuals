@@ -1,9 +1,8 @@
 use {
     super::{get_price_from_pyth, get_price_from_switchboard},
     crate::{
-        error::{PerpetualsError, *},
         math,
-        state::{custody::Oracle, perpetuals::Perpetuals, *},
+        state::{custody::Oracle, perpetuals::Perpetuals},
     },
     anchor_lang::prelude::*,
 };
@@ -76,8 +75,7 @@ impl OraclePrice {
     ) -> Result<Self> {
         match oracle_type {
             Oracle::Pyth(_) => get_price_from_pyth(oracle_account, clock, use_ema),
-            Oracle::Switchboard(_) => get_price_from_switchboard(oracle_account, &clock),
-            _ => err!(PerpetualsError::UnsupportedOracle),
+            Oracle::Switchboard(_) => get_price_from_switchboard(oracle_account, clock),
         }
     }
 

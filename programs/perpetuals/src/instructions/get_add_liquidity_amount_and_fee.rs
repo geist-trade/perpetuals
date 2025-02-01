@@ -72,7 +72,6 @@ pub fn get_add_liquidity_amount_and_fee(
     let token_id = pool.get_token_id(&custody.key())?;
 
     // compute position price
-    let curtime = ctx.accounts.perpetuals.get_time()?;
     let clock = Clock::get()?;
 
     let token_price = OraclePrice::new_from_oracle(

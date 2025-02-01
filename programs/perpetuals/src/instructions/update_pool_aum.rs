@@ -36,7 +36,6 @@ pub struct UpdatePoolAum<'info> {
 }
 
 pub fn update_pool_aum(ctx: Context<UpdatePoolAum>) -> Result<u128> {
-    let perpetuals: &Account<'_, Perpetuals> = ctx.accounts.perpetuals.as_ref();
     let pool = ctx.accounts.pool.as_mut();
 
     let clock = Clock::get()?;

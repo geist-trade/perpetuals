@@ -9,7 +9,7 @@ use {
 #[inline(never)]
 pub fn get_price_from_switchboard(account: &AccountInfo, clock: &Clock) -> Result<OraclePrice> {
     let account_data = account.try_borrow_mut_data()?;
-    let oracle_data = AggregatorAccountData::new_from_bytes(&account_data.as_ref())
+    let oracle_data = AggregatorAccountData::new_from_bytes(&account_data)
         .map_err(|_| PerpetualsError::PriceError)?;
 
     let unix_timestamp = clock.unix_timestamp;

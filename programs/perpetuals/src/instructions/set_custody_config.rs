@@ -6,7 +6,7 @@ use {
         error::PerpetualsError,
         state::{
             custody::{BorrowRateParams, Custody, Fees, PricingParams},
-            multisig::{AdminInstruction, Multisig},
+            multisig::Multisig,
             perpetuals::Permissions,
             pool::{Pool, TokenRatios},
         },

@@ -7,9 +7,7 @@ use {
         },
         error::PerpetualsError,
         math,
-        oracle::{
-            get_price_from_pyth, get_price_from_switchboard, get_prices_from_pyth, OraclePrice,
-        },
+        oracle::{get_price_from_switchboard, get_prices_from_pyth, OraclePrice},
         state::{
             custody::{Custody, Oracle},
             perpetuals::Perpetuals,
@@ -159,7 +157,7 @@ pub fn open_position(ctx: Context<OpenPosition>, params: &OpenPositionParams) ->
     );
 
     // Validate ema oracle
-    if (custody.needs_ema_oracle()) {
+    if custody.needs_ema_oracle() {
         let custody_ema_oracle = &ctx.accounts.custody_ema_oracle_account;
 
         require!(

@@ -78,7 +78,6 @@ pub fn get_swap_amount_and_fees(
     );
 
     // compute token amount returned to the user
-    let curtime = ctx.accounts.perpetuals.get_time()?;
     let clock = Clock::get()?;
     let pool = &ctx.accounts.pool;
     let token_id_in = pool.get_token_id(&ctx.accounts.receiving_custody.key())?;

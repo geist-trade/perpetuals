@@ -143,10 +143,10 @@ pub enum Oracle {
 impl Oracle {
     pub fn from_account_info(account: &AccountInfo, clock: &Clock) -> Result<Self> {
         if account.owner.eq(&PYTH_PROGRAM_ID) {
-            get_price_from_pyth(account, &clock, false)?;
+            get_price_from_pyth(account, clock, false)?;
             Ok(Oracle::Pyth(account.key()))
         } else if account.owner.eq(&SWITCHBOARD_PROGRAM_ID) {
-            get_price_from_switchboard(account, &clock)?;
+            get_price_from_switchboard(account, clock)?;
             Ok(Oracle::Switchboard(account.key()))
         } else {
             Err(PerpetualsError::InvalidOracleAccount.into())

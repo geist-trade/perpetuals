@@ -21,6 +21,9 @@ no-log-ix-name = []
 cpi = ["no-entrypoint"]
 test = []
 default = []
+anchor-debug = []
+custom-panic = []
+custom-heap = []
 
 [dependencies]
 anchor-lang = { version = "0.28.0", features = ["init-if-needed"] }

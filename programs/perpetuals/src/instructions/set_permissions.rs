@@ -6,7 +6,6 @@ use {
         error::PerpetualsError,
         state::{
             admin::{Admin, Permissions},
-            multisig::{AdminInstruction, Multisig},
             perpetuals::Perpetuals,
         },
     },

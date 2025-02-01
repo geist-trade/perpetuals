@@ -707,32 +707,32 @@ impl Pool {
         }
     }
 
-    pub fn get_assets_under_management_usd<'a, 'b>(
+    pub fn get_assets_under_management_usd(
         &self,
         aum_calc_mode: AumCalcMode,
-        accounts: &AccountMap<'a, 'b>,
+        accounts: &AccountMap,
         clock: &Clock,
     ) -> Result<u128> {
         let curtime = clock.unix_timestamp;
         let mut pool_amount_usd: u128 = 0;
 
         for custody in self.custodies.iter() {
-            let custody_account_data = accounts.get_account(&custody)?;
+            let custody_account_data = accounts.get_account(custody)?;
             let custody = Account::<Custody>::try_from(custody_account_data)?;
 
             let oracle = custody.oracle;
             // unwrap is safe here
-            let ema_oracle = custody.ema_oracle.or(Some(oracle)).unwrap();
+            let ema_oracle = custody.ema_oracle.unwrap_or(oracle);
 
             let oracle_account = accounts.get_account(&oracle.key())?;
             let ema_oracle_account = accounts.get_account(&ema_oracle.key())?;
 
             let token_price: OraclePrice =
-                OraclePrice::new_from_oracle(oracle_account, &clock, custody.oracle, false)?;
+                OraclePrice::new_from_oracle(oracle_account, clock, custody.oracle, false)?;
 
             let token_ema_price = OraclePrice::new_from_oracle(
                 ema_oracle_account,
-                &clock,
+                clock,
                 custody.oracle,
                 custody.pricing.use_ema,
             )?;

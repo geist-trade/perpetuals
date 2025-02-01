@@ -5,7 +5,7 @@ use {
         constants::{CUSTODY_SEED, PERPETUALS_SEED, POOL_SEED, POSITION_SEED},
         oracle::OraclePrice,
         state::{
-            custody::{Custody, Oracle},
+            custody::Custody,
             perpetuals::{Perpetuals, PriceAndFee},
             pool::Pool,
             position::{Position, Side},
@@ -91,7 +91,6 @@ pub fn get_exit_price_and_fee(
     // compute exit price and fee
     let position = &ctx.accounts.position;
     let pool = &ctx.accounts.pool;
-    let curtime = ctx.accounts.perpetuals.get_time()?;
     let custody = &ctx.accounts.custody;
     let collateral_custody = &ctx.accounts.collateral_custody;
 
@@ -107,14 +106,14 @@ pub fn get_exit_price_and_fee(
 
     let token_price = OraclePrice::new_from_oracle(
         &ctx.accounts.custody_oracle_account.to_account_info(),
-        &clock,
+        clock,
         custody.oracle,
         false,
     )?;
 
     let token_ema_price = OraclePrice::new_from_oracle(
         &ctx.accounts.custody_oracle_account.to_account_info(),
-        &clock,
+        clock,
         custody.oracle,
         custody.pricing.use_ema,
     )?;
@@ -123,7 +122,7 @@ pub fn get_exit_price_and_fee(
         &ctx.accounts
             .collateral_custody_oracle_account
             .to_account_info(),
-        &clock,
+        clock,
         collateral_custody.oracle,
         collateral_custody.pricing.use_ema,
     )?;

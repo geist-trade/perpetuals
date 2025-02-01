@@ -5,14 +5,7 @@ use {
         constants::{
             ADMIN_SEED, CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED, POOL_SEED,
         },
-        math,
-        state::{
-            admin::Admin,
-            custody::Custody,
-            multisig::{AdminInstruction, Multisig},
-            perpetuals::Perpetuals,
-            pool::Pool,
-        },
+        state::{admin::Admin, custody::Custody, perpetuals::Perpetuals, pool::Pool},
     },
     anchor_lang::prelude::*,
     anchor_spl::token::{Token, TokenAccount},
@@ -93,11 +86,9 @@ pub struct WithdrawFeesParams {
 
 pub fn withdraw_fees<'info>(
     ctx: Context<'_, '_, '_, 'info, WithdrawFees<'info>>,
-    params: &WithdrawFeesParams,
+    _params: &WithdrawFeesParams,
 ) -> Result<u8> {
     // transfer token fees from the custody to the receiver
-    let custody = ctx.accounts.custody.as_mut();
-
     ctx.accounts.custody.withdraw_fees(
         ctx.accounts.custody_token_account.to_account_info(),
         ctx.accounts.receiving_token_account.to_account_info(),
