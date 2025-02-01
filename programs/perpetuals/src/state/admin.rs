@@ -11,7 +11,7 @@ pub enum Permissions {
 pub struct Admin {
     pub address: Pubkey,
     pub bump: u8,
-    pub permissions: Permissions
+    pub permissions: Permissions,
 }
 
 impl Admin {
@@ -24,7 +24,7 @@ impl Admin {
     pub fn has_permissions_over(&self, activity: Permissions) -> bool {
         match self.permissions {
             Permissions::Superadmin => true,
-            _ => self.permissions > activity
+            _ => self.permissions > activity,
         }
     }
 }

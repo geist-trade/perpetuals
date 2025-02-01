@@ -2,18 +2,25 @@
 
 use {
     crate::{
-        constants::{CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED, POOL_SEED, POSITION_SEED}, error::PerpetualsError, math, oracle::{get_price_from_pyth, get_price_from_switchboard, get_prices_from_pyth, OraclePrice}, state::{
-            custody::Custody,
+        constants::{
+            CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED, POOL_SEED, POSITION_SEED,
+        },
+        error::PerpetualsError,
+        math,
+        oracle::{
+            get_price_from_pyth, get_price_from_switchboard, get_prices_from_pyth, OraclePrice,
+        },
+        state::{
+            custody::{Custody, Oracle},
             perpetuals::Perpetuals,
             pool::Pool,
             position::{Position, Side},
-        }
+        },
     },
     anchor_lang::prelude::*,
     anchor_spl::token::{Token, TokenAccount},
     solana_program::program_error::ProgramError,
 };
-use crate::state::custody::Oracle;
 
 #[derive(Accounts)]
 #[instruction(params: OpenPositionParams)]
@@ -125,9 +132,7 @@ pub struct OpenPosition<'info> {
     pub collateral_custody_token_account: Box<Account<'info, TokenAccount>>,
 
     #[account()]
-    pub 
-
-    system_program: Program<'info, System>,
+    pub system_program: Program<'info, System>,
     token_program: Program<'info, Token>,
 }
 
@@ -213,13 +218,15 @@ pub fn open_position(ctx: Context<OpenPosition>, params: &OpenPositionParams) ->
         Oracle::Pyth(_) => {
             // Both base and ema prices are in the same account
             get_prices_from_pyth(custody_oracle, clock)?
-        },
+        }
         Oracle::Switchboard(_) => {
-            let ema_oracle = custody_ema_oracle.as_ref().ok_or(PerpetualsError::EmaOracleRequired)?;
+            let ema_oracle = custody_ema_oracle
+                .as_ref()
+                .ok_or(PerpetualsError::EmaOracleRequired)?;
             (
                 // Base and ema in separate accounts in case of switchboard
                 get_price_from_switchboard(custody_oracle, clock)?,
-                get_price_from_switchboard(ema_oracle, clock)?
+                get_price_from_switchboard(ema_oracle, clock)?,
             )
         }
     };
@@ -228,19 +235,21 @@ pub fn open_position(ctx: Context<OpenPosition>, params: &OpenPositionParams) ->
         Oracle::Pyth(_) => {
             // Both base and ema prices are in the same account
             get_prices_from_pyth(collateral_custody_oracle, clock)?
-        },
+        }
         Oracle::Switchboard(_) => {
-            let ema_oracle = collateral_custody_ema_oracle.as_ref().ok_or(PerpetualsError::EmaOracleRequired)?;
+            let ema_oracle = collateral_custody_ema_oracle
+                .as_ref()
+                .ok_or(PerpetualsError::EmaOracleRequired)?;
             (
                 // Base and ema in separate accounts in case of switchboard
                 get_price_from_switchboard(collateral_custody_oracle, clock)?,
-                get_price_from_switchboard(ema_oracle, clock)?
+                get_price_from_switchboard(ema_oracle, clock)?,
             )
         }
     };
 
-    let min_collateral_price = collateral_price
-        .get_min_price(&collateral_ema_price, collateral_custody.is_stable)?;
+    let min_collateral_price =
+        collateral_price.get_min_price(&collateral_ema_price, collateral_custody.is_stable)?;
 
     let position_price =
         pool.get_entry_price(&token_price, &token_ema_price, params.side, custody)?;
@@ -302,8 +311,8 @@ pub fn open_position(ctx: Context<OpenPosition>, params: &OpenPositionParams) ->
     )?;
     let fee_amount_usd = token_ema_price.get_asset_amount_usd(fee_amount, custody.decimals)?;
     if use_collateral_custody {
-        fee_amount = collateral_ema_price
-            .get_token_amount(fee_amount_usd, collateral_custody.decimals)?;
+        fee_amount =
+            collateral_ema_price.get_token_amount(fee_amount_usd, collateral_custody.decimals)?;
     }
     msg!("Collected fee: {}", fee_amount);
 

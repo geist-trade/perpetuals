@@ -1,12 +1,16 @@
 //! GetExitPriceAndFee instruction handler
 
 use {
-    crate::{constants::{CUSTODY_SEED, PERPETUALS_SEED, POOL_SEED, POSITION_SEED}, oracle::OraclePrice, state::{
-        custody::{Custody, Oracle},
-        perpetuals::{Perpetuals, PriceAndFee},
-        pool::Pool,
-        position::{Position, Side},
-    }},
+    crate::{
+        constants::{CUSTODY_SEED, PERPETUALS_SEED, POOL_SEED, POSITION_SEED},
+        oracle::OraclePrice,
+        state::{
+            custody::{Custody, Oracle},
+            perpetuals::{Perpetuals, PriceAndFee},
+            pool::Pool,
+            position::{Position, Side},
+        },
+    },
     anchor_lang::prelude::*,
 };
 
@@ -77,7 +81,7 @@ pub struct GetExitPriceAndFee<'info> {
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct GetExitPriceAndFeeParams {
-    pool_id: u64
+    pool_id: u64,
 }
 
 pub fn get_exit_price_and_fee(
@@ -98,7 +102,6 @@ pub fn get_exit_price_and_fee(
     //         todo!()
     //     }
     // }
-
 
     // TODO: Separate basic and EMA oracles flow to increase readability of the code.
 

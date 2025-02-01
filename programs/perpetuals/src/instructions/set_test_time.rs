@@ -2,10 +2,12 @@
 
 use {
     crate::{
-        constants::PERPETUALS_SEED, error::PerpetualsError, state::{
+        constants::PERPETUALS_SEED,
+        error::PerpetualsError,
+        state::{
             multisig::{AdminInstruction, Multisig},
             perpetuals::Perpetuals,
-        }
+        },
     },
     anchor_lang::prelude::*,
 };

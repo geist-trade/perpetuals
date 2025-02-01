@@ -2,12 +2,14 @@
 
 use {
     crate::{
-        constants::{CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED}, error::PerpetualsError, state::{
+        constants::{CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED},
+        error::PerpetualsError,
+        state::{
             custody::Custody,
             multisig::{AdminInstruction, Multisig},
             perpetuals::Perpetuals,
             pool::{Pool, TokenRatios},
-        }
+        },
     },
     anchor_lang::prelude::*,
     anchor_spl::token::{Token, TokenAccount},

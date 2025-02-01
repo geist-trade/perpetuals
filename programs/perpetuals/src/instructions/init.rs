@@ -1,17 +1,17 @@
 //! Init instruction handler
-use num_traits::sign;
-
-use crate::state::admin::Permissions;
-
-use crate::{constants::PERPETUALS_SEED, state::admin::Admin};
-use crate::constants::ADMIN_SEED;
 use {
     crate::{
+        constants::{ADMIN_SEED, PERPETUALS_SEED},
         error::PerpetualsError,
-        state::{multisig::Multisig, perpetuals::Perpetuals},
+        state::{
+            admin::{Admin, Permissions},
+            multisig::Multisig,
+            perpetuals::Perpetuals,
+        },
     },
     anchor_lang::prelude::*,
     anchor_spl::token::Token,
+    num_traits::sign,
     solana_program::program_error::ProgramError,
 };
 
@@ -58,10 +58,7 @@ pub struct InitParams {
     pub allow_size_change: bool,
 }
 
-pub fn init(
-    ctx: Context<Init>, 
-    params: &InitParams
-) -> Result<()> {
+pub fn init(ctx: Context<Init>, params: &InitParams) -> Result<()> {
     let signer = &ctx.accounts.signer;
     let perpetuals = &mut ctx.accounts.perpetuals;
     let superadmin = &mut ctx.accounts.superadmin;

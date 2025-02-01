@@ -1,11 +1,17 @@
 //! GetAddLiquidityAmountAndFee instruction handler
 
 use {
-    crate::{constants::{CUSTODY_SEED, LP_TOKEN_MINT_SEED, PERPETUALS_SEED}, helpers::AccountMap, math, oracle::OraclePrice, state::{
+    crate::{
+        constants::{CUSTODY_SEED, LP_TOKEN_MINT_SEED, PERPETUALS_SEED},
+        helpers::AccountMap,
+        math,
+        oracle::OraclePrice,
+        state::{
             custody::Custody,
             perpetuals::{AmountAndFee, Perpetuals},
             pool::{AumCalcMode, Pool},
-        }},
+        },
+    },
     anchor_lang::prelude::*,
     anchor_spl::token::Mint,
     solana_program::program_error::ProgramError,

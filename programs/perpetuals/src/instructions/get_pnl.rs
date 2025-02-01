@@ -1,12 +1,16 @@
 //! GetPnl instruction handler
 
 use {
-    crate::{constants::{CUSTODY_SEED, PERPETUALS_SEED}, oracle::OraclePrice, state::{
-        custody::Custody,
-        perpetuals::{Perpetuals, ProfitAndLoss},
-        pool::Pool,
-        position::Position,
-    }},
+    crate::{
+        constants::{CUSTODY_SEED, PERPETUALS_SEED},
+        oracle::OraclePrice,
+        state::{
+            custody::Custody,
+            perpetuals::{Perpetuals, ProfitAndLoss},
+            pool::Pool,
+            position::Position,
+        },
+    },
     anchor_lang::prelude::*,
 };
 
@@ -91,7 +95,7 @@ pub fn get_pnl(ctx: Context<GetPnl>, _params: &GetPnlParams) -> Result<ProfitAnd
         &ctx.accounts
             .collateral_custody_oracle_account
             .to_account_info(),
-            &clock,
+        &clock,
         collateral_custody.oracle,
         false,
     )?;
@@ -100,7 +104,7 @@ pub fn get_pnl(ctx: Context<GetPnl>, _params: &GetPnlParams) -> Result<ProfitAnd
         &ctx.accounts
             .collateral_custody_oracle_account
             .to_account_info(),
-            &clock,
+        &clock,
         collateral_custody.oracle,
         collateral_custody.pricing.use_ema,
     )?;

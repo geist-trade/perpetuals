@@ -39,8 +39,7 @@ pub async fn test_swap(
 
     let dispensing_custody_account =
         utils::get_account::<Custody>(program_test_ctx, dispensing_custody_pda).await;
-    let dispensing_custody_oracle_account_address =
-        dispensing_custody_account.oracle.key();
+    let dispensing_custody_oracle_account_address = dispensing_custody_account.oracle.key();
 
     let receiving_custody_account =
         utils::get_account::<Custody>(program_test_ctx, receiving_custody_pda).await;

@@ -1,11 +1,12 @@
-use anchor_lang::prelude::*;
-use crate::{state::custody::Oracle};
-use crate::error::PerpetualsError;
-use crate::error::*;
-use crate::state::*;
-use super::{get_price_from_pyth, get_price_from_switchboard};
-use crate::state::perpetuals::Perpetuals;
-use crate::math;
+use {
+    super::{get_price_from_pyth, get_price_from_switchboard},
+    crate::{
+        error::{PerpetualsError, *},
+        math,
+        state::{custody::Oracle, perpetuals::Perpetuals, *},
+    },
+    anchor_lang::prelude::*,
+};
 
 const ORACLE_EXPONENT_SCALE: i32 = -9;
 const ORACLE_PRICE_SCALE: u64 = 1_000_000_000;
@@ -53,7 +54,6 @@ impl PartialEq for OraclePrice {
 }
 
 impl Eq for OraclePrice {}
-
 
 #[allow(dead_code)]
 impl OraclePrice {

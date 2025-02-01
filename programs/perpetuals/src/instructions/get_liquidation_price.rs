@@ -1,10 +1,12 @@
 //! GetLiquidationPrice instruction handler
 
 use {
-    crate::{constants::{CUSTODY_SEED, PERPETUALS_SEED}, math, oracle::OraclePrice, state::{
-            custody::Custody, perpetuals::Perpetuals, pool::Pool,
-            position::Position,
-        }},
+    crate::{
+        constants::{CUSTODY_SEED, PERPETUALS_SEED},
+        math,
+        oracle::OraclePrice,
+        state::{custody::Custody, perpetuals::Perpetuals, pool::Pool, position::Position},
+    },
     anchor_lang::prelude::*,
 };
 

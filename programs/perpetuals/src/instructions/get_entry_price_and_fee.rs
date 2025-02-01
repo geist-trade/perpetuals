@@ -1,12 +1,16 @@
 //! GetEntryPriceAndFee instruction handler
 
 use {
-    crate::{constants::{CUSTODY_SEED, PERPETUALS_SEED}, oracle::OraclePrice, state::{
-        custody::Custody,
-        perpetuals::{NewPositionPricesAndFee, Perpetuals},
-        pool::Pool,
-        position::{Position, Side},
-    }},
+    crate::{
+        constants::{CUSTODY_SEED, PERPETUALS_SEED},
+        oracle::OraclePrice,
+        state::{
+            custody::Custody,
+            perpetuals::{NewPositionPricesAndFee, Perpetuals},
+            pool::Pool,
+            position::{Position, Side},
+        },
+    },
     anchor_lang::prelude::*,
     solana_program::program_error::ProgramError,
 };

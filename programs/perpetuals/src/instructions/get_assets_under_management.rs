@@ -1,10 +1,14 @@
 //! GetAssetsUnderManagement instruction handler
 
 use {
-    crate::{constants::PERPETUALS_SEED, helpers::AccountMap, state::{
-        perpetuals::Perpetuals,
-        pool::{AumCalcMode, Pool},
-    }},
+    crate::{
+        constants::PERPETUALS_SEED,
+        helpers::AccountMap,
+        state::{
+            perpetuals::Perpetuals,
+            pool::{AumCalcMode, Pool},
+        },
+    },
     anchor_lang::prelude::*,
 };
 
@@ -36,9 +40,7 @@ pub fn get_assets_under_management(
 ) -> Result<u128> {
     let accounts_map = AccountMap::from_remaining_accounts(ctx.remaining_accounts);
     let clock = Clock::get()?;
-    ctx.accounts.pool.get_assets_under_management_usd(
-        AumCalcMode::EMA,
-        &accounts_map,
-        &clock,
-    )
+    ctx.accounts
+        .pool
+        .get_assets_under_management_usd(AumCalcMode::EMA, &accounts_map, &clock)
 }

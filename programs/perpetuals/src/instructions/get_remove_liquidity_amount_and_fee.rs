@@ -2,11 +2,15 @@
 
 use {
     crate::{
-        constants::{CUSTODY_SEED, LP_TOKEN_MINT_SEED, PERPETUALS_SEED}, helpers::AccountMap, math, oracle::OraclePrice, state::{
+        constants::{CUSTODY_SEED, LP_TOKEN_MINT_SEED, PERPETUALS_SEED},
+        helpers::AccountMap,
+        math,
+        oracle::OraclePrice,
+        state::{
             custody::Custody,
             perpetuals::{AmountAndFee, Perpetuals},
             pool::{AumCalcMode, Pool},
-        }
+        },
     },
     anchor_lang::prelude::*,
     anchor_spl::token::Mint,
@@ -66,7 +70,6 @@ pub fn get_remove_liquidity_amount_and_fee(
     let pool = &ctx.accounts.pool;
     let custody = &ctx.accounts.custody;
     let token_id = pool.get_token_id(&custody.key())?;
-
 
     // compute position price
     let curtime = ctx.accounts.perpetuals.get_time()?;

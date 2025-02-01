@@ -1,24 +1,18 @@
-use crate::{constants::CUSTODY_SEED, oracle::get_price_from_pyth};
-use switchboard_solana::ID as SWITCHBOARD_PROGRAM_ID;
-use pyth_solana_receiver_sdk::ID as PYTH_PROGRAM_ID;
 use {
     crate::{
+        constants::CUSTODY_SEED,
         error::PerpetualsError,
         math,
+        oracle::{get_price_from_pyth, get_price_from_switchboard, OraclePrice},
         state::{
             perpetuals::{Permissions, Perpetuals},
             position::{Position, Side},
         },
     },
     anchor_lang::prelude::*,
-};
-use anchor_spl::token::{
-    Transfer,
-    transfer
-};
-use crate::oracle::{
-    get_price_from_switchboard,
-    OraclePrice
+    anchor_spl::token::{transfer, Transfer},
+    pyth_solana_receiver_sdk::ID as PYTH_PROGRAM_ID,
+    switchboard_solana::ID as SWITCHBOARD_PROGRAM_ID,
 };
 
 #[derive(Copy, Clone, PartialEq, AnchorSerialize, AnchorDeserialize, Debug)]
@@ -143,14 +137,11 @@ pub struct PositionStats {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, AnchorDeserialize, AnchorSerialize)]
 pub enum Oracle {
     Pyth(Pubkey),
-    Switchboard(Pubkey)
+    Switchboard(Pubkey),
 }
 
 impl Oracle {
-    pub fn from_account_info(
-        account: &AccountInfo,
-        clock: &Clock,
-    ) -> Result<Self> {
+    pub fn from_account_info(account: &AccountInfo, clock: &Clock) -> Result<Self> {
         if account.owner.eq(&PYTH_PROGRAM_ID) {
             get_price_from_pyth(account, &clock, false)?;
             Ok(Oracle::Pyth(account.key()))
@@ -164,7 +155,7 @@ impl Oracle {
 
     pub fn key(&self) -> Pubkey {
         match self {
-            Oracle::Pyth(key) | Oracle::Switchboard(key) => *key
+            Oracle::Pyth(key) | Oracle::Switchboard(key) => *key,
         }
     }
 
@@ -623,20 +614,20 @@ impl Custody {
             CUSTODY_SEED.as_bytes(),
             self.pool.as_ref(),
             self.mint.as_ref(),
-            &[self.bump]
+            &[self.bump],
         ];
 
         transfer(
             CpiContext::new_with_signer(
-                token_program.to_account_info(), 
+                token_program.to_account_info(),
                 Transfer {
                     from: from.to_account_info(),
                     authority: authority.to_account_info(),
-                    to: to.to_account_info()
-                }, 
-                &[seeds]
-            ), 
-            self.assets.protocol_fees
+                    to: to.to_account_info(),
+                },
+                &[seeds],
+            ),
+            self.assets.protocol_fees,
         )?;
 
         Ok(())
@@ -645,7 +636,7 @@ impl Custody {
     pub fn needs_ema_oracle(&self) -> bool {
         match self.oracle {
             Oracle::Pyth(_) => false,
-            Oracle::Switchboard(_) => true
+            Oracle::Switchboard(_) => true,
         }
     }
 }

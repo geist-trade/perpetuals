@@ -1,16 +1,11 @@
-use anchor_lang::prelude::*;
-use std::collections::BTreeMap;
-
-use crate::error::PerpetualsError;
+use {crate::error::PerpetualsError, anchor_lang::prelude::*, std::collections::BTreeMap};
 
 pub struct AccountMap<'a, 'b> {
-    pub map: BTreeMap::<Pubkey, &'b AccountInfo<'a>>,
+    pub map: BTreeMap<Pubkey, &'b AccountInfo<'a>>,
 }
 
 impl<'a, 'b> AccountMap<'a, 'b> {
-    pub fn from_remaining_accounts(
-        remaining_accounts: &'b [AccountInfo<'a>]
-    ) -> Self {
+    pub fn from_remaining_accounts(remaining_accounts: &'b [AccountInfo<'a>]) -> Self {
         let mut map = BTreeMap::new();
 
         for account in remaining_accounts {

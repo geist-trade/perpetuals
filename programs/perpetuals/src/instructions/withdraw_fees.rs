@@ -2,17 +2,21 @@
 
 use {
     crate::{
-        constants::{ADMIN_SEED, CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED, POOL_SEED}, math, state::{
+        constants::{
+            ADMIN_SEED, CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED, POOL_SEED,
+        },
+        math,
+        state::{
+            admin::Admin,
             custody::Custody,
             multisig::{AdminInstruction, Multisig},
             perpetuals::Perpetuals,
             pool::Pool,
-        }
+        },
     },
     anchor_lang::prelude::*,
     anchor_spl::token::{Token, TokenAccount},
 };
-use crate::state::admin::Admin;
 
 #[derive(Accounts)]
 #[instruction(

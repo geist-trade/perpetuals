@@ -1,14 +1,25 @@
 //! AddLiquidity instruction handler
 
 use {
-    crate::{constants::{CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, LP_TOKEN_MINT_SEED, PERPETUALS_SEED, POOL_SEED}, error::PerpetualsError, helpers::AccountMap, math, oracle::OraclePrice, state::{
+    crate::{
+        constants::{
+            CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, LP_TOKEN_MINT_SEED, PERPETUALS_SEED,
+            POOL_SEED,
+        },
+        error::PerpetualsError,
+        helpers::AccountMap,
+        math,
+        oracle::OraclePrice,
+        state::{
             custody::Custody,
             perpetuals::Perpetuals,
             pool::{AumCalcMode, Pool},
-        }},
+        },
+    },
     anchor_lang::prelude::*,
     anchor_spl::token::{Mint, Token, TokenAccount},
-    solana_program::program_error::ProgramError, std::collections::BTreeMap,
+    solana_program::program_error::ProgramError,
+    std::collections::BTreeMap,
 };
 
 #[derive(Accounts)]
@@ -113,7 +124,7 @@ pub fn add_liquidity(ctx: Context<AddLiquidity>, params: &AddLiquidityParams) ->
     );
 
     let account_map = AccountMap::from_remaining_accounts(&ctx.remaining_accounts);
-    
+
     // validate inputs
     msg!("Validate inputs");
     if params.amount_in == 0 {
@@ -127,9 +138,7 @@ pub fn add_liquidity(ctx: Context<AddLiquidity>, params: &AddLiquidityParams) ->
     let clock = Clock::get()?;
 
     // Refresh pool.aum_usm to adapt to token price change
-    pool.aum_usd =
-        pool.get_assets_under_management_usd(AumCalcMode::EMA, &account_map, &clock)?;
-
+    pool.aum_usd = pool.get_assets_under_management_usd(AumCalcMode::EMA, &account_map, &clock)?;
 
     let clock = &Clock::get()?;
 
@@ -243,8 +252,7 @@ pub fn add_liquidity(ctx: Context<AddLiquidity>, params: &AddLiquidityParams) ->
     // update pool stats
     msg!("Update pool stats");
     custody.exit(&crate::ID)?;
-    pool.aum_usd =
-        pool.get_assets_under_management_usd(AumCalcMode::EMA, &account_map, &clock)?;
+    pool.aum_usd = pool.get_assets_under_management_usd(AumCalcMode::EMA, &account_map, &clock)?;
 
     Ok(())
 }

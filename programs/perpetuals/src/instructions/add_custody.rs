@@ -1,12 +1,10 @@
 //! AddCustody instruction handler
-use crate::{constants::{
-    CUSTODY_SEED, PERPETUALS_SEED, POOL_SEED, CUSTODY_TOKEN_ACCOUNT_SEED
-}, state::custody::Oracle};
 use {
     crate::{
+        constants::{CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED, POOL_SEED},
         error::PerpetualsError,
         state::{
-            custody::{BorrowRateParams, Custody, Fees, PricingParams},
+            custody::{BorrowRateParams, Custody, Fees, Oracle, PricingParams},
             multisig::{AdminInstruction, Multisig},
             perpetuals::{Permissions, Perpetuals},
             pool::{Pool, TokenRatios},

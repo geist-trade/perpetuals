@@ -2,11 +2,13 @@
 
 use {
     crate::{
-        constants::PERPETUALS_SEED, error::PerpetualsError, state::{
+        constants::PERPETUALS_SEED,
+        error::PerpetualsError,
+        state::{
             multisig::{AdminInstruction, Multisig},
             perpetuals::Perpetuals,
             pool::Pool,
-        }
+        },
     },
     anchor_lang::prelude::*,
 };
@@ -84,6 +86,6 @@ pub fn remove_pool<'info>(
     // remove pool from the list
     let perpetuals = ctx.accounts.perpetuals.as_mut();
     perpetuals.pools -= 1;
-    
+
     Ok(0)
 }

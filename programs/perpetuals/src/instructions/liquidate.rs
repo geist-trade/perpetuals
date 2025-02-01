@@ -2,12 +2,16 @@
 
 use {
     crate::{
-        constants::{CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED}, error::PerpetualsError, math, oracle::OraclePrice, state::{
+        constants::{CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED},
+        error::PerpetualsError,
+        math,
+        oracle::OraclePrice,
+        state::{
             custody::Custody,
             perpetuals::Perpetuals,
             pool::Pool,
             position::{Position, Side},
-        }
+        },
     },
     anchor_lang::prelude::*,
     anchor_spl::token::{Token, TokenAccount},

@@ -2,13 +2,16 @@
 
 use {
     crate::{
-        constants::{CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED}, error::PerpetualsError, math, state::{custody::Custody, perpetuals::Perpetuals, pool::Pool}
+        constants::{CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED},
+        error::PerpetualsError,
+        math,
+        oracle::OraclePrice,
+        state::{custody::Custody, perpetuals::Perpetuals, pool::Pool},
     },
     anchor_lang::prelude::*,
     anchor_spl::token::{Token, TokenAccount},
     solana_program::program_error::ProgramError,
 };
-use crate::oracle::OraclePrice;
 
 #[derive(Accounts)]
 #[instruction(params: SwapParams)]
@@ -140,7 +143,7 @@ pub fn swap(ctx: Context<Swap>, params: &SwapParams) -> Result<()> {
     let received_token_price = OraclePrice::new_from_oracle(
         &ctx.accounts
             .receiving_custody_oracle_account
-            .to_account_info(), 
+            .to_account_info(),
         &clock,
         receiving_custody.oracle,
         false,

@@ -1,7 +1,7 @@
 //! AddPool instruction handler
-use crate::constants::{PERPETUALS_SEED, LP_TOKEN_MINT_SEED, POOL_SEED};
 use {
     crate::{
+        constants::{LP_TOKEN_MINT_SEED, PERPETUALS_SEED, POOL_SEED},
         error::PerpetualsError,
         state::{
             multisig::{AdminInstruction, Multisig},
@@ -72,7 +72,7 @@ pub fn add_pool<'info>(
     // record pool data
     let perpetuals = ctx.accounts.perpetuals.as_mut();
     let pool = ctx.accounts.pool.as_mut();
-    
+
     pool.inception_time = perpetuals.get_time()?;
     pool.name = params.name.clone();
     pool.bump = *ctx.bumps.get("pool").ok_or(ProgramError::InvalidSeeds)?;

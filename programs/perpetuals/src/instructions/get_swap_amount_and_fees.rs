@@ -1,11 +1,15 @@
 //! GetSwapAmountAndFees instruction handler
 
 use {
-    crate::{constants::{CUSTODY_SEED, PERPETUALS_SEED}, oracle::OraclePrice, state::{
-        custody::Custody,
-        perpetuals::{Perpetuals, SwapAmountAndFees},
-        pool::Pool,
-    }},
+    crate::{
+        constants::{CUSTODY_SEED, PERPETUALS_SEED},
+        oracle::OraclePrice,
+        state::{
+            custody::Custody,
+            perpetuals::{Perpetuals, SwapAmountAndFees},
+            pool::Pool,
+        },
+    },
     anchor_lang::prelude::*,
     solana_program::program_error::ProgramError,
 };
