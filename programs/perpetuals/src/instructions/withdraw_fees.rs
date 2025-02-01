@@ -2,17 +2,14 @@
 
 use {
     crate::{
-        constants::{ADMIN_SEED, CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED, POOL_SEED}, math, state::{
-            custody::Custody,
-            multisig::{AdminInstruction, Multisig},
-            perpetuals::Perpetuals,
-            pool::Pool,
-        }
+        constants::{
+            ADMIN_SEED, CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED, POOL_SEED,
+        },
+        state::{admin::Admin, custody::Custody, perpetuals::Perpetuals, pool::Pool},
     },
     anchor_lang::prelude::*,
     anchor_spl::token::{Token, TokenAccount},
 };
-use crate::state::admin::Admin;
 
 #[derive(Accounts)]
 #[instruction(
@@ -44,7 +41,7 @@ pub struct WithdrawFees<'info> {
         mut,
         seeds = [
             POOL_SEED.as_bytes(),
-            args.pool_id.to_le_bytes()
+           & args.pool_id.to_le_bytes()
         ],
         bump = pool.bump
     )]
@@ -89,15 +86,13 @@ pub struct WithdrawFeesParams {
 
 pub fn withdraw_fees<'info>(
     ctx: Context<'_, '_, '_, 'info, WithdrawFees<'info>>,
-    params: &WithdrawFeesParams,
+    _params: &WithdrawFeesParams,
 ) -> Result<u8> {
     // transfer token fees from the custody to the receiver
-    let custody = ctx.accounts.custody.as_mut();
-
     ctx.accounts.custody.withdraw_fees(
         ctx.accounts.custody_token_account.to_account_info(),
         ctx.accounts.receiving_token_account.to_account_info(),
-        ctx.accounts.transfer_authority.to_account_info(),
+        ctx.accounts.custody.to_account_info(),
         ctx.accounts.token_program.to_account_info(),
     )?;
 

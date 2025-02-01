@@ -2,15 +2,16 @@
 
 use {
     crate::{
+        constants::{CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED, POOL_SEED},
         error::PerpetualsError,
         math,
+        oracle::OraclePrice,
         state::{custody::Custody, perpetuals::Perpetuals, pool::Pool},
     },
     anchor_lang::prelude::*,
     anchor_spl::token::{Token, TokenAccount},
     solana_program::program_error::ProgramError,
 };
-use crate::oracle::OraclePrice;
 
 #[derive(Accounts)]
 #[instruction(params: SwapParams)]
@@ -47,7 +48,7 @@ pub struct Swap<'info> {
 
     #[account(
         mut,
-        seeds = [b"pool",
+        seeds = [POOL_SEED.as_bytes(),
                  pool.name.as_bytes()],
         bump = pool.bump
     )]
@@ -64,7 +65,7 @@ pub struct Swap<'info> {
 
     /// CHECK: oracle account for the received token
     #[account(
-        constraint = receiving_custody_oracle_account.key() == receiving_custody.oracle.oracle_account
+        constraint = receiving_custody_oracle_account.key() == receiving_custody.oracle.key()
     )]
     pub receiving_custody_oracle_account: AccountInfo<'info>,
 
@@ -88,7 +89,7 @@ pub struct Swap<'info> {
 
     /// CHECK: oracle account for the returned token
     #[account(
-        constraint = dispensing_custody_oracle_account.key() == dispensing_custody.oracle.oracle_account
+        constraint = dispensing_custody_oracle_account.key() == dispensing_custody.oracle.key()
     )]
     pub dispensing_custody_oracle_account: AccountInfo<'info>,
 
@@ -135,6 +136,7 @@ pub fn swap(ctx: Context<Swap>, params: &SwapParams) -> Result<()> {
     // compute token amount returned to the user
     let pool = ctx.accounts.pool.as_mut();
     let curtime = perpetuals.get_time()?;
+    let clock = Clock::get()?;
     let token_id_in = pool.get_token_id(&receiving_custody.key())?;
     let token_id_out = pool.get_token_id(&dispensing_custody.key())?;
 
@@ -142,8 +144,8 @@ pub fn swap(ctx: Context<Swap>, params: &SwapParams) -> Result<()> {
         &ctx.accounts
             .receiving_custody_oracle_account
             .to_account_info(),
-        &receiving_custody.oracle,
-        curtime,
+        &clock,
+        receiving_custody.oracle,
         false,
     )?;
 
@@ -151,8 +153,8 @@ pub fn swap(ctx: Context<Swap>, params: &SwapParams) -> Result<()> {
         &ctx.accounts
             .receiving_custody_oracle_account
             .to_account_info(),
-        &receiving_custody.oracle,
-        curtime,
+        &clock,
+        receiving_custody.oracle,
         receiving_custody.pricing.use_ema,
     )?;
 
@@ -160,8 +162,8 @@ pub fn swap(ctx: Context<Swap>, params: &SwapParams) -> Result<()> {
         &ctx.accounts
             .dispensing_custody_oracle_account
             .to_account_info(),
-        &dispensing_custody.oracle,
-        curtime,
+        &clock,
+        dispensing_custody.oracle,
         false,
     )?;
 
@@ -169,8 +171,8 @@ pub fn swap(ctx: Context<Swap>, params: &SwapParams) -> Result<()> {
         &ctx.accounts
             .dispensing_custody_oracle_account
             .to_account_info(),
-        &dispensing_custody.oracle,
-        curtime,
+        &clock,
+        dispensing_custody.oracle,
         dispensing_custody.pricing.use_ema,
     )?;
 

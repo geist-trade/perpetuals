@@ -2,6 +2,7 @@
 
 use {
     crate::{
+        constants::PERPETUALS_SEED,
         math,
         state::{
             multisig::{AdminInstruction, Multisig},

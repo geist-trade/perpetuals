@@ -1,15 +1,18 @@
 use {
     crate::{
-        error::PerpetualsError, helpers::AccountMap, math, state::{
+        error::PerpetualsError,
+        helpers::AccountMap,
+        math,
+        oracle::OraclePrice,
+        state::{
             custody::{Custody, FeesMode},
             perpetuals::Perpetuals,
             position::{Position, Side},
-        }
+        },
     },
     anchor_lang::prelude::*,
     std::cmp::Ordering,
 };
-use crate::oracle::OraclePrice;
 
 #[derive(Copy, Clone, PartialEq, AnchorSerialize, AnchorDeserialize, Debug)]
 pub enum AumCalcMode {
@@ -707,35 +710,30 @@ impl Pool {
     pub fn get_assets_under_management_usd(
         &self,
         aum_calc_mode: AumCalcMode,
-        accounts: &[AccountInfo],
-        clock: &Clock
+        accounts: &AccountMap,
+        clock: &Clock,
     ) -> Result<u128> {
         let curtime = clock.unix_timestamp;
-        let account_map = AccountMap::from_remaining_accounts(accounts)?;
         let mut pool_amount_usd: u128 = 0;
 
-        for (idx, &custody) in self.custodies.iter().enumerate() {
-            let custody_account_data = account_map.get_account(&custody)?;
+        for custody in self.custodies.iter() {
+            let custody_account_data = accounts.get_account(custody)?;
             let custody = Account::<Custody>::try_from(custody_account_data)?;
 
             let oracle = custody.oracle;
             // unwrap is safe here
-            let ema_oracle = custody.ema_oracle.or(Some(oracle)).unwrap();
+            let ema_oracle = custody.ema_oracle.unwrap_or(oracle);
 
-            let oracle_account = account_map.get_account(oracle.key())?;
-            let ema_oracle_account = account_map.get_account(ema_oracle.key())?;
-            
-            let token_price = OraclePrice::new_from_oracle(
-                oracle_account,
-                &clock,
-                &custody.oracle,
-                false,
-            )?;
+            let oracle_account = accounts.get_account(&oracle.key())?;
+            let ema_oracle_account = accounts.get_account(&ema_oracle.key())?;
+
+            let token_price: OraclePrice =
+                OraclePrice::new_from_oracle(oracle_account, clock, custody.oracle, false)?;
 
             let token_ema_price = OraclePrice::new_from_oracle(
                 ema_oracle_account,
-                &clock,
-                &custody.oracle,
+                clock,
+                custody.oracle,
                 custody.pricing.use_ema,
             )?;
 
@@ -758,11 +756,8 @@ impl Pool {
                 }
             };
 
-            let token_amount_usd = aum_token_price
-                .get_asset_amount_usd(
-                    custody.assets.owned, 
-                    custody.decimals
-                )?;
+            let token_amount_usd =
+                aum_token_price.get_asset_amount_usd(custody.assets.owned, custody.decimals)?;
 
             pool_amount_usd = math::checked_add(pool_amount_usd, token_amount_usd as u128)?;
 

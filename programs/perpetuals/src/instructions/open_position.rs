@@ -2,19 +2,23 @@
 
 use {
     crate::{
+        constants::{
+            CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED, POOL_SEED, POSITION_SEED,
+        },
+        error::PerpetualsError,
+        math,
         oracle::OraclePrice,
-        constants::{CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED, POOL_SEED, POSITION_SEED}, error::PerpetualsError, math, oracle::{get_prices_from_pyth, get_price_from_switchboard}, state::{
+        state::{
             custody::Custody,
             perpetuals::Perpetuals,
             pool::Pool,
             position::{Position, Side},
-        }
+        },
     },
     anchor_lang::prelude::*,
     anchor_spl::token::{Token, TokenAccount},
     solana_program::program_error::ProgramError,
 };
-use crate::state::custody::Oracle;
 
 #[derive(Accounts)]
 #[instruction(params: OpenPositionParams)]
@@ -41,7 +45,7 @@ pub struct OpenPosition<'info> {
         mut,
         seeds = [
             POOL_SEED.as_bytes(),
-            params.pool_id.to_le_bytes()
+            &params.pool_id.to_le_bytes()
         ],
         bump = pool.bump
     )]
@@ -84,7 +88,7 @@ pub struct OpenPosition<'info> {
     // This oracle is dependent on the main oracle, so it cant be aggregated in one account.
     #[account(
         mut,
-        constraint = custody.ema_oracle.is_none() || custody_ema_oracle_account.key() == custody.ema_oracle.key() @ PerpetualsError::InvalidEmaOracle
+        constraint = custody.ema_oracle.is_none() || Some(custody_ema_oracle_account.key()) == custody.ema_oracle.map(|o| o.key()) @ PerpetualsError::InvalidEmaOracle
     )]
     pub custody_ema_oracle_account: Option<AccountInfo<'info>>,
 
@@ -110,7 +114,7 @@ pub struct OpenPosition<'info> {
     // This oracle is dependent on the main oracle, so it cant be aggregated in one account.
     #[account(
         mut,
-        constraint = collateral_custody.ema_oracle.is_none() || collateral_custody_ema_oracle_account.key() == collateral_custody.ema_oracle.key() @ PerpetualsError::InvalidEmaOracle
+        constraint = collateral_custody.ema_oracle.is_none() || Some(collateral_custody_ema_oracle_account.key()) == collateral_custody.ema_oracle.map(|o| o.key()) @ PerpetualsError::InvalidEmaOracle
     )]
     pub collateral_custody_ema_oracle_account: Option<AccountInfo<'info>>,
 
@@ -126,9 +130,7 @@ pub struct OpenPosition<'info> {
     pub collateral_custody_token_account: Box<Account<'info, TokenAccount>>,
 
     #[account()]
-    pub 
-
-    system_program: Program<'info, System>,
+    pub system_program: Program<'info, System>,
     token_program: Program<'info, Token>,
 }
 
@@ -155,7 +157,7 @@ pub fn open_position(ctx: Context<OpenPosition>, params: &OpenPositionParams) ->
     );
 
     // Validate ema oracle
-    if (custody.needs_ema_oracle()) {
+    if custody.needs_ema_oracle() {
         let custody_ema_oracle = &ctx.accounts.custody_ema_oracle_account;
 
         require!(
@@ -197,49 +199,22 @@ pub fn open_position(ctx: Context<OpenPosition>, params: &OpenPositionParams) ->
     // compute position price
     let curtime = perpetuals.get_time()?;
 
-    // let token_price = OraclePrice::new_from_oracle(
-    //     &ctx.accounts.custody_oracle_account.to_account_info(),
-    //     &custody.oracle,
-    //     curtime,
-    //     false,
-    // )?;
+    let clock = &Clock::get()?;
 
-    let custody_oracle = &ctx.accounts.custody_oracle_account;
-    let custody_ema_oracle = &ctx.accounts.custody_ema_oracle_account;
-    let collateral_custody_oracle = &ctx.accounts.collateral_custody_oracle_account;
-    let collateral_custody_ema_oracle = &ctx.accounts.collateral_custody_ema_oracle_account;
-    let clock = &Clock::get();
+    let (token_price, token_ema_price) = custody.oracle.extract_prices(
+        &ctx.accounts.custody_oracle_account,
+        &ctx.accounts.custody_ema_oracle_account,
+        clock,
+    )?;
 
-    let (token_price, token_ema_price) = match custody.oracle {
-        Oracle::PYTH(_) => {
-            // Both base and ema prices are in the same account
-            get_prices_from_pyth(custody_oracle, clock)
-        },
-        Oracle::SWITCHBOARD(_) => {
-            (
-                // Base and ema in separate accounts in case of switchboard
-                get_price_from_switchboard(custody_oracle, clock),
-                get_price_from_switchboard(&custody_ema_oracle.unwrap(), clock)
-            )
-        }
-    }?;
+    let (collateral_price, collateral_ema_price) = custody.oracle.extract_prices(
+        &ctx.accounts.collateral_custody_oracle_account,
+        &ctx.accounts.collateral_custody_ema_oracle_account,
+        clock,
+    )?;
 
-    let (collateral_price, collateral_ema_price) = match custody.oracle {
-        Oracle::PYTH(_) => {
-            // Both base and ema prices are in the same account
-            get_prices_from_pyth(collateral_custody_oracle, clock)
-        },
-        Oracle::SWITCHBOARD(_) => {
-            (
-                // Base and ema in separate accounts in case of switchboard
-                get_price_from_switchboard(collateral_custody_oracle, clock),
-                get_price_from_switchboard(&collateral_custody_ema_oracle.unwrap(), clock)
-            )
-        }
-    }?;
-
-    let min_collateral_price = collateral_price
-        .get_min_price(&collateral_ema_price, collateral_custody.is_stable)?;
+    let min_collateral_price =
+        collateral_price.get_min_price(&collateral_ema_price, collateral_custody.is_stable)?;
 
     let position_price =
         pool.get_entry_price(&token_price, &token_ema_price, params.side, custody)?;
@@ -301,8 +276,8 @@ pub fn open_position(ctx: Context<OpenPosition>, params: &OpenPositionParams) ->
     )?;
     let fee_amount_usd = token_ema_price.get_asset_amount_usd(fee_amount, custody.decimals)?;
     if use_collateral_custody {
-        fee_amount = collateral_ema_price
-            .get_token_amount(fee_amount_usd, collateral_custody.decimals)?;
+        fee_amount =
+            collateral_ema_price.get_token_amount(fee_amount_usd, collateral_custody.decimals)?;
     }
     msg!("Collected fee: {}", fee_amount);
 

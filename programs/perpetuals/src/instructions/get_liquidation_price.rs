@@ -1,13 +1,11 @@
 //! GetLiquidationPrice instruction handler
 
 use {
-    crate::oracle::OraclePrice,
     crate::{
+        constants::{CUSTODY_SEED, PERPETUALS_SEED, POOL_SEED, POSITION_SEED},
         math,
-        state::{
-            custody::Custody, perpetuals::Perpetuals, pool::Pool,
-            position::Position,
-        },
+        oracle::OraclePrice,
+        state::{custody::Custody, perpetuals::Perpetuals, pool::Pool, position::Position},
     },
     anchor_lang::prelude::*,
 };
@@ -21,14 +19,14 @@ pub struct GetLiquidationPrice<'info> {
     pub perpetuals: Box<Account<'info, Perpetuals>>,
 
     #[account(
-        seeds = [b"pool",
+        seeds = [POOL_SEED.as_bytes(),
                  pool.name.as_bytes()],
         bump = pool.bump
     )]
     pub pool: Box<Account<'info, Pool>>,
 
     #[account(
-        seeds = [b"position",
+        seeds = [POSITION_SEED.as_bytes(),
                  position.owner.as_ref(),
                  pool.key().as_ref(),
                  custody.key().as_ref(),
@@ -47,7 +45,7 @@ pub struct GetLiquidationPrice<'info> {
 
     /// CHECK: oracle account for the collateral token
     #[account(
-        constraint = custody_oracle_account.key() == custody.oracle.oracle_account
+        constraint = custody_oracle_account.key() == custody.oracle.key()
     )]
     pub custody_oracle_account: AccountInfo<'info>,
 
@@ -58,7 +56,7 @@ pub struct GetLiquidationPrice<'info> {
 
     /// CHECK: oracle account for the collateral token
     #[account(
-        constraint = collateral_custody_oracle_account.key() == collateral_custody.oracle.oracle_account
+        constraint = collateral_custody_oracle_account.key() == collateral_custody.oracle.key()
     )]
     pub collateral_custody_oracle_account: AccountInfo<'info>,
 }
@@ -77,11 +75,12 @@ pub fn get_liquidation_price(
     let custody = &ctx.accounts.custody;
     let collateral_custody = &ctx.accounts.collateral_custody;
     let curtime = ctx.accounts.perpetuals.get_time()?;
+    let clock = Clock::get()?;
 
     let token_ema_price = OraclePrice::new_from_oracle(
         &ctx.accounts.custody_oracle_account.to_account_info(),
-        &custody.oracle,
-        curtime,
+        &clock,
+        custody.oracle,
         custody.pricing.use_ema,
     )?;
 
@@ -89,8 +88,8 @@ pub fn get_liquidation_price(
         &ctx.accounts
             .collateral_custody_oracle_account
             .to_account_info(),
-        &collateral_custody.oracle,
-        curtime,
+        &clock,
+        collateral_custody.oracle,
         false,
     )?;
 
@@ -98,8 +97,8 @@ pub fn get_liquidation_price(
         &ctx.accounts
             .collateral_custody_oracle_account
             .to_account_info(),
-        &collateral_custody.oracle,
-        curtime,
+        &clock,
+        collateral_custody.oracle,
         collateral_custody.pricing.use_ema,
     )?;
 

@@ -2,6 +2,7 @@
 
 use {
     crate::{
+        constants::{PERPETUALS_SEED, POOL_SEED},
         error::PerpetualsError,
         state::{
             multisig::{AdminInstruction, Multisig},
@@ -34,7 +35,7 @@ pub struct RemovePool<'info> {
 
     #[account(
         mut,
-        realloc = Perpetuals::LEN + (perpetuals.pools.len() - 1) * 32,
+        realloc = Perpetuals::LEN + (perpetuals.pools as usize - 1) * 32,
         realloc::payer = admin,
         realloc::zero = false,
         seeds = [PERPETUALS_SEED.as_bytes()],
@@ -44,7 +45,7 @@ pub struct RemovePool<'info> {
 
     #[account(
         mut,
-        seeds = [b"pool",
+        seeds = [POOL_SEED.as_bytes(),
                  pool.name.as_bytes()],
         bump = pool.bump,
         close = transfer_authority
@@ -84,12 +85,7 @@ pub fn remove_pool<'info>(
 
     // remove pool from the list
     let perpetuals = ctx.accounts.perpetuals.as_mut();
-    let pool_idx = perpetuals
-        .pools
-        .iter()
-        .position(|x| *x == ctx.accounts.pool.key())
-        .ok_or(PerpetualsError::InvalidPoolState)?;
-    perpetuals.pools.remove(pool_idx);
+    perpetuals.pools -= 1;
 
     Ok(0)
 }

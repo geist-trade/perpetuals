@@ -41,7 +41,7 @@ pub async fn get_update_pool_ix(
             let custody_account = utils::get_account::<Custody>(program_test_ctx, *custody).await;
 
             accounts_meta.push(AccountMeta {
-                pubkey: custody_account.oracle.oracle_account,
+                pubkey: custody_account.oracle.key(),
                 is_signer: false,
                 is_writable: false,
             });

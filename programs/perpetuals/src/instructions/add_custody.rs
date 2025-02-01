@@ -1,13 +1,10 @@
 //! AddCustody instruction handler
-use crate::{constants::{
-    CUSTODY_SEED, PERPETUALS_SEED, POOL_SEED, CUSTODY_TOKEN_ACCOUNT_SEED
-}, state::custody::Oracle};
 use {
     crate::{
+        constants::{CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED, POOL_SEED},
         error::PerpetualsError,
         state::{
-            custody::{BorrowRateParams, Custody, Fees, PricingParams},
-            multisig::{AdminInstruction, Multisig},
+            custody::{BorrowRateParams, Custody, Fees, Oracle, PricingParams},
             perpetuals::{Permissions, Perpetuals},
             pool::{Pool, TokenRatios},
         },
@@ -16,10 +13,10 @@ use {
     anchor_spl::token::{Mint, Token, TokenAccount},
 };
 
+#[derive(Accounts)]
 #[instruction(
     args: AddCustodyParams
 )]
-#[derive(Accounts)]
 pub struct AddCustody<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
@@ -39,7 +36,7 @@ pub struct AddCustody<'info> {
         realloc::zero = false,
         seeds = [
             POOL_SEED.as_bytes(),
-            args.pool_id.to_le_bytes()
+            &args.pool_id.to_le_bytes()
         ],
         bump = pool.bump
     )]
@@ -118,7 +115,7 @@ pub fn add_custody<'info>(
     let custody = ctx.accounts.custody.as_mut();
     let oracle_account = &ctx.accounts.oracle_account;
 
-    let oracle = Oracle::from_account_info(oracle_accoun, &clock)?;
+    let oracle = Oracle::from_account_info(oracle_account, &clock)?;
     custody.oracle = oracle;
     custody.pool = pool.key();
     custody.mint = ctx.accounts.custody_token_mint.key();

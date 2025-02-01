@@ -2,13 +2,15 @@
 
 use {
     crate::{
-        constants::PERPETUALS_SEED, error::PerpetualsError, state::{
-            admin::Permissions, multisig::{AdminInstruction, Multisig}, perpetuals::Perpetuals
-        }
+        constants::PERPETUALS_SEED,
+        error::PerpetualsError,
+        state::{
+            admin::{Admin, Permissions},
+            perpetuals::Perpetuals,
+        },
     },
     anchor_lang::prelude::*,
 };
-use crate::state::admin::Admin;
 
 #[derive(Accounts)]
 pub struct SetPermissions<'info> {
@@ -46,7 +48,6 @@ pub fn set_permissions<'info>(
     ctx: Context<'_, '_, '_, 'info, SetPermissions<'info>>,
     params: &SetPermissionsParams,
 ) -> Result<u8> {
-
     // update permissions
     let perpetuals = ctx.accounts.perpetuals.as_mut();
     perpetuals.permissions.allow_swap = params.allow_swap;

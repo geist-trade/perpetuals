@@ -35,7 +35,7 @@ pub async fn test_open_position(
         utils::find_associated_token_account(&owner.pubkey(), custody_token_mint).0;
 
     let custody_account = utils::get_account::<Custody>(program_test_ctx, custody_pda).await;
-    let custody_oracle_account_address = custody_account.oracle.oracle_account;
+    let custody_oracle_account_address = custody_account.oracle.key();
 
     // Save account state before tx execution
     let owner_funding_account_before =

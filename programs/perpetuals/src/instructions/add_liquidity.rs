@@ -1,14 +1,24 @@
 //! AddLiquidity instruction handler
 
 use {
-    crate::{constants::{CUSTODY_SEED, PERPETUALS_SEED, POOL_SEED}, error::PerpetualsError, math, oracle::OraclePrice, state::{
+    crate::{
+        constants::{
+            CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, LP_TOKEN_MINT_SEED, PERPETUALS_SEED,
+            POOL_SEED,
+        },
+        error::PerpetualsError,
+        helpers::AccountMap,
+        math,
+        oracle::OraclePrice,
+        state::{
             custody::Custody,
             perpetuals::Perpetuals,
             pool::{AumCalcMode, Pool},
-        }},
+        },
+    },
     anchor_lang::prelude::*,
     anchor_spl::token::{Mint, Token, TokenAccount},
-    solana_program::program_error::ProgramError, std::collections::BTreeMap,
+    solana_program::program_error::ProgramError,
 };
 
 #[derive(Accounts)]
@@ -60,7 +70,7 @@ pub struct AddLiquidity<'info> {
 
     /// CHECK: oracle account for the receiving token
     #[account(
-        constraint = custody_oracle_account.key() == custody.oracle.oracle_account
+        constraint = custody_oracle_account.key() == custody.oracle.key()
     )]
     pub custody_oracle_account: AccountInfo<'info>,
 
@@ -80,7 +90,7 @@ pub struct AddLiquidity<'info> {
 
     #[account(
         mut,
-        seeds = [LP_TOKEN_MINT_SEED.to_bytes(),
+        seeds = [LP_TOKEN_MINT_SEED.as_bytes(),
                  pool.key().as_ref()],
         bump = pool.lp_token_bump
     )]
@@ -112,12 +122,7 @@ pub fn add_liquidity(ctx: Context<AddLiquidity>, params: &AddLiquidityParams) ->
         PerpetualsError::InstructionNotAllowed
     );
 
-    let account_map = BTreeMap::<Pubkey, &AccountInfo>::new();
-    
-    for i in 0..ctx.remaining_accounts.len() {
-        let account = ctx.remaining_accounts[i];
-        account_map.insert(account.key, &account);
-    }
+    let account_map = AccountMap::from_remaining_accounts(ctx.remaining_accounts);
 
     // validate inputs
     msg!("Validate inputs");
@@ -129,27 +134,28 @@ pub fn add_liquidity(ctx: Context<AddLiquidity>, params: &AddLiquidityParams) ->
 
     // calculate fee
     let curtime = perpetuals.get_time()?;
+    let clock = Clock::get()?;
 
     // Refresh pool.aum_usm to adapt to token price change
-    pool.aum_usd =
-        pool.get_assets_under_management_usd(AumCalcMode::EMA, ctx.remaining_accounts, curtime)?;
+    pool.aum_usd = pool.get_assets_under_management_usd(AumCalcMode::EMA, &account_map, &clock)?;
 
-
-    let clock = &Clock::get();
+    let clock = &Clock::get()?;
 
     let token_price = OraclePrice::new_from_oracle(
         &ctx.accounts.custody_oracle_account.to_account_info(),
-        &clock,
-        &custody.oracle,
+        clock,
+        custody.oracle,
         false,
     )?;
 
-    let custody_oracle_account = &ctx.accounts.custody_oracle_account;
-    let custody_ema_oracle_account = &ctx.accounts.custody_ema_oracle_account;
+    let oracle_account = match &ctx.accounts.custody_ema_oracle_account {
+        Some(ema_oracle) => ema_oracle,
+        None => &ctx.accounts.custody_oracle_account,
+    };
     let token_ema_price = OraclePrice::new_from_oracle(
-        if custody.ema_oracle.is_some() { &custody_ema_oracle_account.unwrap() } else { custody_oracle_account },
-        &clock,
-        &custody.oracle,
+        oracle_account,
+        clock,
+        custody.oracle,
         custody.pricing.use_ema,
     )?;
 
@@ -185,7 +191,7 @@ pub fn add_liquidity(ctx: Context<AddLiquidity>, params: &AddLiquidityParams) ->
     // compute assets under management
     msg!("Compute assets under management");
     let pool_amount_usd =
-        pool.get_assets_under_management_usd(AumCalcMode::Max, ctx.remaining_accounts, curtime)?;
+        pool.get_assets_under_management_usd(AumCalcMode::Max, &account_map, clock)?;
 
     // compute amount of lp tokens to mint
     let no_fee_amount = math::checked_sub(params.amount_in, fee_amount)?;
@@ -219,7 +225,7 @@ pub fn add_liquidity(ctx: Context<AddLiquidity>, params: &AddLiquidityParams) ->
     perpetuals.mint_tokens(
         ctx.accounts.lp_token_mint.to_account_info(),
         ctx.accounts.lp_token_account.to_account_info(),
-        ctx.accounts.transfer_authority.to_account_info(),
+        ctx.accounts.owner.to_account_info(),
         ctx.accounts.token_program.to_account_info(),
         lp_amount,
     )?;
@@ -245,8 +251,7 @@ pub fn add_liquidity(ctx: Context<AddLiquidity>, params: &AddLiquidityParams) ->
     // update pool stats
     msg!("Update pool stats");
     custody.exit(&crate::ID)?;
-    pool.aum_usd =
-        pool.get_assets_under_management_usd(AumCalcMode::EMA, ctx.remaining_accounts, curtime)?;
+    pool.aum_usd = pool.get_assets_under_management_usd(AumCalcMode::EMA, &account_map, clock)?;
 
     Ok(())
 }

@@ -2,6 +2,8 @@
 
 use {
     crate::{
+        constants::{LP_TOKEN_MINT_SEED, PERPETUALS_SEED, POOL_SEED},
+        helpers::AccountMap,
         math,
         state::{
             perpetuals::Perpetuals,
@@ -22,14 +24,14 @@ pub struct GetLpTokenPrice<'info> {
     pub perpetuals: Box<Account<'info, Perpetuals>>,
 
     #[account(
-        seeds = [b"pool",
+        seeds = [POOL_SEED.as_bytes(),
                  pool.name.as_bytes()],
         bump = pool.bump
     )]
     pub pool: Box<Account<'info, Pool>>,
 
     #[account(
-        seeds = [LP_TOKEN_MINT_SEED.to_bytes(),
+        seeds = [LP_TOKEN_MINT_SEED.as_bytes(),
                  pool.key().as_ref()],
         bump = pool.lp_token_bump
     )]
@@ -46,10 +48,12 @@ pub fn get_lp_token_price(
     ctx: Context<GetLpTokenPrice>,
     _params: &GetLpTokenPriceParams,
 ) -> Result<u64> {
+    let accounts_map = AccountMap::from_remaining_accounts(ctx.remaining_accounts);
+    let clock = Clock::get()?;
     let aum_usd = math::checked_as_u64(ctx.accounts.pool.get_assets_under_management_usd(
         AumCalcMode::EMA,
-        ctx.remaining_accounts,
-        ctx.accounts.perpetuals.get_time()?,
+        &accounts_map,
+        &clock,
     )?)?;
 
     msg!("aum_usd: {}", aum_usd);

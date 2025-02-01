@@ -1,11 +1,14 @@
 //! GetSwapAmountAndFees instruction handler
 
 use {
-    crate::oracle::OraclePrice,
-    crate::state::{
-        custody::Custody,
-        perpetuals::{Perpetuals, SwapAmountAndFees},
-        pool::Pool,
+    crate::{
+        constants::{CUSTODY_SEED, PERPETUALS_SEED, POOL_SEED},
+        oracle::OraclePrice,
+        state::{
+            custody::Custody,
+            perpetuals::{Perpetuals, SwapAmountAndFees},
+            pool::Pool,
+        },
     },
     anchor_lang::prelude::*,
     solana_program::program_error::ProgramError,
@@ -20,7 +23,7 @@ pub struct GetSwapAmountAndFees<'info> {
     pub perpetuals: Box<Account<'info, Perpetuals>>,
 
     #[account(
-        seeds = [b"pool",
+        seeds = [POOL_SEED.as_bytes(),
                  pool.name.as_bytes()],
         bump = pool.bump
     )]
@@ -36,7 +39,7 @@ pub struct GetSwapAmountAndFees<'info> {
 
     /// CHECK: oracle account for the received token
     #[account(
-        constraint = receiving_custody_oracle_account.key() == receiving_custody.oracle.oracle_account
+        constraint = receiving_custody_oracle_account.key() == receiving_custody.oracle.key()
     )]
     pub receiving_custody_oracle_account: AccountInfo<'info>,
 
@@ -50,7 +53,7 @@ pub struct GetSwapAmountAndFees<'info> {
 
     /// CHECK: oracle account for the returned token
     #[account(
-        constraint = dispensing_custody_oracle_account.key() == dispensing_custody.oracle.oracle_account
+        constraint = dispensing_custody_oracle_account.key() == dispensing_custody.oracle.key()
     )]
     pub dispensing_custody_oracle_account: AccountInfo<'info>,
 }
@@ -75,7 +78,7 @@ pub fn get_swap_amount_and_fees(
     );
 
     // compute token amount returned to the user
-    let curtime = ctx.accounts.perpetuals.get_time()?;
+    let clock = Clock::get()?;
     let pool = &ctx.accounts.pool;
     let token_id_in = pool.get_token_id(&ctx.accounts.receiving_custody.key())?;
     let token_id_out = pool.get_token_id(&ctx.accounts.dispensing_custody.key())?;
@@ -86,8 +89,8 @@ pub fn get_swap_amount_and_fees(
         &ctx.accounts
             .receiving_custody_oracle_account
             .to_account_info(),
-        &receiving_custody.oracle,
-        curtime,
+        &clock,
+        receiving_custody.oracle,
         false,
     )?;
 
@@ -95,8 +98,8 @@ pub fn get_swap_amount_and_fees(
         &ctx.accounts
             .receiving_custody_oracle_account
             .to_account_info(),
-        &receiving_custody.oracle,
-        curtime,
+        &clock,
+        receiving_custody.oracle,
         receiving_custody.pricing.use_ema,
     )?;
 
@@ -104,8 +107,8 @@ pub fn get_swap_amount_and_fees(
         &ctx.accounts
             .dispensing_custody_oracle_account
             .to_account_info(),
-        &dispensing_custody.oracle,
-        curtime,
+        &clock,
+        dispensing_custody.oracle,
         false,
     )?;
 
@@ -113,8 +116,8 @@ pub fn get_swap_amount_and_fees(
         &ctx.accounts
             .dispensing_custody_oracle_account
             .to_account_info(),
-        &dispensing_custody.oracle,
-        curtime,
+        &clock,
+        dispensing_custody.oracle,
         dispensing_custody.pricing.use_ema,
     )?;
 

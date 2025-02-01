@@ -1,12 +1,15 @@
 //! GetEntryPriceAndFee instruction handler
 
 use {
-    crate::oracle::OraclePrice,
-    crate::state::{
-        custody::Custody,
-        perpetuals::{NewPositionPricesAndFee, Perpetuals},
-        pool::Pool,
-        position::{Position, Side},
+    crate::{
+        constants::{CUSTODY_SEED, PERPETUALS_SEED, POOL_SEED},
+        oracle::OraclePrice,
+        state::{
+            custody::Custody,
+            perpetuals::{NewPositionPricesAndFee, Perpetuals},
+            pool::Pool,
+            position::{Position, Side},
+        },
     },
     anchor_lang::prelude::*,
     solana_program::program_error::ProgramError,
@@ -21,7 +24,7 @@ pub struct GetEntryPriceAndFee<'info> {
     pub perpetuals: Box<Account<'info, Perpetuals>>,
 
     #[account(
-        seeds = [b"pool",
+        seeds = [POOL_SEED.as_bytes(),
                  pool.name.as_bytes()],
         bump = pool.bump
     )]
@@ -37,7 +40,7 @@ pub struct GetEntryPriceAndFee<'info> {
 
     /// CHECK: oracle account for the collateral token
     #[account(
-        constraint = custody_oracle_account.key() == custody.oracle.oracle_account
+        constraint = custody_oracle_account.key() == custody.oracle.key()
     )]
     pub custody_oracle_account: AccountInfo<'info>,
 
@@ -51,7 +54,7 @@ pub struct GetEntryPriceAndFee<'info> {
 
     /// CHECK: oracle account for the collateral token
     #[account(
-        constraint = collateral_custody_oracle_account.key() == collateral_custody.oracle.oracle_account
+        constraint = collateral_custody_oracle_account.key() == collateral_custody.oracle.key()
     )]
     pub collateral_custody_oracle_account: AccountInfo<'info>,
 }
@@ -77,18 +80,19 @@ pub fn get_entry_price_and_fee(
 
     // compute position price
     let curtime = ctx.accounts.perpetuals.get_time()?;
+    let clock = Clock::get()?;
 
     let token_price = OraclePrice::new_from_oracle(
         &ctx.accounts.custody_oracle_account.to_account_info(),
-        &custody.oracle,
-        curtime,
+        &clock,
+        custody.oracle,
         false,
     )?;
 
     let token_ema_price = OraclePrice::new_from_oracle(
         &ctx.accounts.custody_oracle_account.to_account_info(),
-        &custody.oracle,
-        curtime,
+        &clock,
+        custody.oracle,
         custody.pricing.use_ema,
     )?;
 
@@ -96,8 +100,8 @@ pub fn get_entry_price_and_fee(
         &ctx.accounts
             .collateral_custody_oracle_account
             .to_account_info(),
-        &collateral_custody.oracle,
-        curtime,
+        &clock,
+        collateral_custody.oracle,
         false,
     )?;
 
@@ -105,8 +109,8 @@ pub fn get_entry_price_and_fee(
         &ctx.accounts
             .collateral_custody_oracle_account
             .to_account_info(),
-        &collateral_custody.oracle,
-        curtime,
+        &clock,
+        collateral_custody.oracle,
         collateral_custody.pricing.use_ema,
     )?;
 

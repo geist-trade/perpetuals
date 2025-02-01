@@ -2,10 +2,11 @@
 
 use {
     crate::{
+        constants::{CUSTODY_SEED, POOL_SEED},
         error::PerpetualsError,
         state::{
             custody::{BorrowRateParams, Custody, Fees, PricingParams},
-            multisig::{AdminInstruction, Multisig},
+            multisig::Multisig,
             perpetuals::Permissions,
             pool::{Pool, TokenRatios},
         },
@@ -27,7 +28,7 @@ pub struct SetCustodyConfig<'info> {
 
     #[account(
         mut,
-        seeds = [b"pool",
+        seeds = [POOL_SEED.as_bytes(),
                  pool.name.as_bytes()],
         bump = pool.bump
     )]

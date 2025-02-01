@@ -2,14 +2,15 @@
 
 #![allow(clippy::result_large_err)]
 
-pub mod error;
+pub mod constants;
+mod error;
+pub mod helpers;
 pub mod instructions;
 pub mod math;
-pub mod state;
-pub mod constants;
 pub mod oracle;
-pub mod helpers;
+pub mod state;
 
+pub use error::PerpetualsError;
 use {
     anchor_lang::prelude::*,
     instructions::*,
