@@ -39,7 +39,7 @@ pub struct AddCustody<'info> {
         realloc::zero = false,
         seeds = [
             POOL_SEED.as_bytes(),
-            args.pool_id.to_le_bytes()
+            &args.pool_id.to_le_bytes()
         ],
         bump = pool.bump
     )]
@@ -118,7 +118,7 @@ pub fn add_custody<'info>(
     let custody = ctx.accounts.custody.as_mut();
     let oracle_account = &ctx.accounts.oracle_account;
 
-    let oracle = Oracle::from_account_info(oracle_accoun, &clock)?;
+    let oracle = Oracle::from_account_info(oracle_account, &clock)?;
     custody.oracle = oracle;
     custody.pool = pool.key();
     custody.mint = ctx.accounts.custody_token_mint.key();

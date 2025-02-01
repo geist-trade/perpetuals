@@ -3,7 +3,7 @@ use crate::{state::custody::Oracle};
 use crate::error::PerpetualsError;
 use crate::error::*;
 use crate::state::*;
-use super::{get_price_from_switchboard};
+use super::{get_price_from_pyth, get_price_from_switchboard};
 use crate::state::perpetuals::Perpetuals;
 use crate::math;
 

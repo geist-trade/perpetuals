@@ -1,4 +1,4 @@
-use crate::constants::CUSTODY_SEED;
+use crate::{constants::CUSTODY_SEED, oracle::get_price_from_pyth};
 use switchboard_solana::ID as SWITCHBOARD_PROGRAM_ID;
 use pyth_solana_receiver_sdk::ID as PYTH_PROGRAM_ID;
 use {
@@ -162,9 +162,9 @@ impl Oracle {
         }
     }
 
-    pub fn key(&self) -> &Pubkey {
+    pub fn key(&self) -> Pubkey {
         match self {
-            Oracle::Pyth(key) | Oracle::Switchboard(key) => key
+            Oracle::Pyth(key) | Oracle::Switchboard(key) => *key
         }
     }
 

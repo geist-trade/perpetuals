@@ -2,14 +2,12 @@
 
 use {
     crate::{
-        error::PerpetualsError,
-        math,
-        state::{
+        constants::{CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED}, error::PerpetualsError, math, state::{
             custody::Custody,
             perpetuals::Perpetuals,
             pool::Pool,
             position::{Position, Side},
-        },
+        }
     },
     anchor_lang::prelude::*,
     anchor_spl::token::{Token, TokenAccount},
@@ -71,7 +69,7 @@ pub struct RemoveCollateral<'info> {
 
     /// CHECK: oracle account for the collateral token
     #[account(
-        constraint = custody_oracle_account.key() == custody.oracle.oracle_account
+        constraint = custody_oracle_account.key() == custody.oracle.key()
     )]
     pub custody_oracle_account: AccountInfo<'info>,
 
@@ -83,7 +81,7 @@ pub struct RemoveCollateral<'info> {
 
     /// CHECK: oracle account for the collateral token
     #[account(
-        constraint = collateral_custody_oracle_account.key() == collateral_custody.oracle.oracle_account
+        constraint = collateral_custody_oracle_account.key() == collateral_custody.oracle.key()
     )]
     pub collateral_custody_oracle_account: AccountInfo<'info>,
 
@@ -129,18 +127,19 @@ pub fn remove_collateral(
 
     // compute position price
     let curtime = perpetuals.get_time()?;
+    let clock = Clock::get()?;
 
     let token_price = OraclePrice::new_from_oracle(
         &ctx.accounts.custody_oracle_account.to_account_info(),
-        &custody.oracle,
-        curtime,
+        &clock,
+        custody.oracle,
         false,
     )?;
 
     let token_ema_price = OraclePrice::new_from_oracle(
         &ctx.accounts.custody_oracle_account.to_account_info(),
-        &custody.oracle,
-        curtime,
+        &clock,
+        custody.oracle,
         custody.pricing.use_ema,
     )?;
 
@@ -148,8 +147,8 @@ pub fn remove_collateral(
         &ctx.accounts
             .collateral_custody_oracle_account
             .to_account_info(),
-        &collateral_custody.oracle,
-        curtime,
+        &clock,
+        collateral_custody.oracle,
         false,
     )?;
 
@@ -157,8 +156,8 @@ pub fn remove_collateral(
         &ctx.accounts
             .collateral_custody_oracle_account
             .to_account_info(),
-        &collateral_custody.oracle,
-        curtime,
+        &clock,
+        collateral_custody.oracle,
         collateral_custody.pricing.use_ema,
     )?;
 

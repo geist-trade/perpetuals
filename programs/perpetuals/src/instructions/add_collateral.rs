@@ -1,17 +1,12 @@
 //! AddCollateral instruction handler
 
 use {
-    crate::oracle::OraclePrice,
-    crate::{
-        error::PerpetualsError,
-        math,
-        state::{
+    crate::{constants::{CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED}, error::PerpetualsError, math, oracle::OraclePrice, state::{
             custody::Custody,
             perpetuals::Perpetuals,
             pool::Pool,
             position::{Position, Side},
-        },
-    },
+        }},
     anchor_lang::prelude::*,
     anchor_spl::token::{Token, TokenAccount},
     solana_program::program_error::ProgramError,
@@ -71,7 +66,7 @@ pub struct AddCollateral<'info> {
 
     /// CHECK: oracle account for the collateral token
     #[account(
-        constraint = custody_oracle_account.key() == custody.oracle.oracle_account
+        constraint = custody_oracle_account.key() == custody.oracle.key()
     )]
     pub custody_oracle_account: AccountInfo<'info>,
 
@@ -83,7 +78,7 @@ pub struct AddCollateral<'info> {
 
     /// CHECK: oracle account for the collateral token
     #[account(
-        constraint = collateral_custody_oracle_account.key() == collateral_custody.oracle.oracle_account
+        constraint = collateral_custody_oracle_account.key() == collateral_custody.oracle.key()
     )]
     pub collateral_custody_oracle_account: AccountInfo<'info>,
 
@@ -118,18 +113,19 @@ pub fn add_collateral(ctx: Context<AddCollateral>, params: &AddCollateralParams)
 
     // compute position price
     let curtime = perpetuals.get_time()?;
+    let clock = Clock::get()?;
 
     let token_price = OraclePrice::new_from_oracle(
         &ctx.accounts.custody_oracle_account.to_account_info(),
-        &custody.oracle,
-        curtime,
+        &clock,
+        custody.oracle,
         false,
     )?;
 
     let token_ema_price = OraclePrice::new_from_oracle(
         &ctx.accounts.custody_oracle_account.to_account_info(),
-        &custody.oracle,
-        curtime,
+        &clock,
+        custody.oracle,
         custody.pricing.use_ema,
     )?;
 
@@ -137,8 +133,8 @@ pub fn add_collateral(ctx: Context<AddCollateral>, params: &AddCollateralParams)
         &ctx.accounts
             .collateral_custody_oracle_account
             .to_account_info(),
-        &collateral_custody.oracle,
-        curtime,
+        &clock,
+        collateral_custody.oracle,
         false,
     )?;
 
@@ -146,8 +142,8 @@ pub fn add_collateral(ctx: Context<AddCollateral>, params: &AddCollateralParams)
         &ctx.accounts
             .collateral_custody_oracle_account
             .to_account_info(),
-        &collateral_custody.oracle,
-        curtime,
+        &clock,
+        collateral_custody.oracle,
         collateral_custody.pricing.use_ema,
     )?;
 

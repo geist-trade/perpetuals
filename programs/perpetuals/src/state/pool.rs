@@ -704,26 +704,25 @@ impl Pool {
         }
     }
 
-    pub fn get_assets_under_management_usd<'a>(
+    pub fn get_assets_under_management_usd<'a, 'b>(
         &self,
         aum_calc_mode: AumCalcMode,
-        accounts: &'a [AccountInfo<'a>],
+        accounts: &AccountMap<'a, 'b>,
         clock: &Clock
     ) -> Result<u128> {
         let curtime = clock.unix_timestamp;
-        let account_map = AccountMap::from_remaining_accounts(accounts);
         let mut pool_amount_usd: u128 = 0;
 
-        for (idx, &custody) in self.custodies.iter().enumerate() {
-            let custody_account_data = account_map.get_account(&custody)?;
+        for custody in self.custodies.iter() {
+            let custody_account_data = accounts.get_account(&custody)?;
             let custody = Account::<Custody>::try_from(custody_account_data)?;
 
             let oracle = custody.oracle;
             // unwrap is safe here
             let ema_oracle = custody.ema_oracle.or(Some(oracle)).unwrap();
 
-            let oracle_account = account_map.get_account(oracle.key())?;
-            let ema_oracle_account = account_map.get_account(ema_oracle.key())?;
+            let oracle_account = accounts.get_account(&oracle.key())?;
+            let ema_oracle_account = accounts.get_account(&ema_oracle.key())?;
             
             let token_price: OraclePrice = OraclePrice::new_from_oracle(
                 oracle_account,

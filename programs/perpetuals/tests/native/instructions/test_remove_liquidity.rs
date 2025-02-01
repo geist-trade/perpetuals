@@ -37,7 +37,7 @@ pub async fn test_remove_liquidity(
         utils::find_associated_token_account(&owner.pubkey(), &lp_token_mint_pda).0;
 
     let custody_account = utils::get_account::<Custody>(program_test_ctx, custody_pda).await;
-    let custody_oracle_account_address = custody_account.oracle.oracle_account;
+    let custody_oracle_account_address = custody_account.oracle.key();
 
     // Save account state before tx execution
     let owner_receiving_account_before =
@@ -80,7 +80,7 @@ pub async fn test_remove_liquidity(
             let custody_account = utils::get_account::<Custody>(program_test_ctx, *custody).await;
 
             accounts_meta.push(AccountMeta {
-                pubkey: custody_account.oracle.oracle_account,
+                pubkey: custody_account.oracle.key(),
                 is_signer: false,
                 is_writable: false,
             });

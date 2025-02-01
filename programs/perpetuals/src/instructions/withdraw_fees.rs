@@ -44,7 +44,7 @@ pub struct WithdrawFees<'info> {
         mut,
         seeds = [
             POOL_SEED.as_bytes(),
-            args.pool_id.to_le_bytes()
+           & args.pool_id.to_le_bytes()
         ],
         bump = pool.bump
     )]
@@ -97,7 +97,7 @@ pub fn withdraw_fees<'info>(
     ctx.accounts.custody.withdraw_fees(
         ctx.accounts.custody_token_account.to_account_info(),
         ctx.accounts.receiving_token_account.to_account_info(),
-        ctx.accounts.transfer_authority.to_account_info(),
+        ctx.accounts.custody.to_account_info(),
         ctx.accounts.token_program.to_account_info(),
     )?;
 

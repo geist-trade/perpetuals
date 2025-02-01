@@ -1,10 +1,10 @@
 //! UpdatePoolAum instruction handler
 
 use {
-    crate::state::{
+    crate::{constants::PERPETUALS_SEED, helpers::AccountMap, state::{
         perpetuals::Perpetuals,
         pool::{AumCalcMode, Pool},
-    },
+    }},
     anchor_lang::prelude::*,
 };
 
@@ -35,15 +35,16 @@ pub fn update_pool_aum(ctx: Context<UpdatePoolAum>) -> Result<u128> {
     let perpetuals: &Account<'_, Perpetuals> = ctx.accounts.perpetuals.as_ref();
     let pool = ctx.accounts.pool.as_mut();
 
-    let curtime: i64 = perpetuals.get_time()?;
+    let clock = Clock::get()?;
 
     // update pool stats
     msg!("Update pool asset under management");
 
     msg!("Previous value: {}", pool.aum_usd);
 
+    let accounts_map = AccountMap::from_remaining_accounts(ctx.remaining_accounts);
     pool.aum_usd =
-        pool.get_assets_under_management_usd(AumCalcMode::EMA, ctx.remaining_accounts, curtime)?;
+        pool.get_assets_under_management_usd(AumCalcMode::EMA, &accounts_map, &clock)?;
 
     msg!("Updated value: {}", pool.aum_usd);
 

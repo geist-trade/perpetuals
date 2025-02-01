@@ -2,11 +2,10 @@
 
 use {
     crate::{
-        math,
-        state::{
+        constants::PERPETUALS_SEED, math, state::{
             multisig::{AdminInstruction, Multisig},
             perpetuals::Perpetuals,
-        },
+        }
     },
     anchor_lang::prelude::*,
     solana_program::sysvar,

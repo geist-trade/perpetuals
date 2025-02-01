@@ -1,15 +1,11 @@
 //! GetAddLiquidityAmountAndFee instruction handler
 
 use {
-    crate::oracle::OraclePrice,
-    crate::{
-        math,
-        state::{
+    crate::{constants::{CUSTODY_SEED, LP_TOKEN_MINT_SEED, PERPETUALS_SEED}, helpers::AccountMap, math, oracle::OraclePrice, state::{
             custody::Custody,
             perpetuals::{AmountAndFee, Perpetuals},
             pool::{AumCalcMode, Pool},
-        },
-    },
+        }},
     anchor_lang::prelude::*,
     anchor_spl::token::Mint,
     solana_program::program_error::ProgramError,
@@ -40,12 +36,12 @@ pub struct GetAddLiquidityAmountAndFee<'info> {
 
     /// CHECK: oracle account for the collateral token
     #[account(
-        constraint = custody_oracle_account.key() == custody.oracle.oracle_account
+        constraint = custody_oracle_account.key() == custody.oracle.key()
     )]
     pub custody_oracle_account: AccountInfo<'info>,
 
     #[account(
-        seeds = [LP_TOKEN_MINT_SEED.to_bytes(),
+        seeds = [LP_TOKEN_MINT_SEED.as_bytes(),
                  pool.key().as_ref()],
         bump = pool.lp_token_bump
     )]
@@ -71,18 +67,19 @@ pub fn get_add_liquidity_amount_and_fee(
 
     // compute position price
     let curtime = ctx.accounts.perpetuals.get_time()?;
+    let clock = Clock::get()?;
 
     let token_price = OraclePrice::new_from_oracle(
         &ctx.accounts.custody_oracle_account.to_account_info(),
-        &custody.oracle,
-        curtime,
+        &clock,
+        custody.oracle,
         false,
     )?;
 
     let token_ema_price = OraclePrice::new_from_oracle(
         &ctx.accounts.custody_oracle_account.to_account_info(),
-        &custody.oracle,
-        curtime,
+        &clock,
+        custody.oracle,
         custody.pricing.use_ema,
     )?;
 
@@ -90,8 +87,9 @@ pub fn get_add_liquidity_amount_and_fee(
         pool.get_add_liquidity_fee(token_id, params.amount_in, custody, &token_price)?;
     let no_fee_amount = math::checked_sub(params.amount_in, fee_amount)?;
 
+    let accounts_map = AccountMap::from_remaining_accounts(ctx.remaining_accounts);
     let pool_amount_usd =
-        pool.get_assets_under_management_usd(AumCalcMode::Max, ctx.remaining_accounts, curtime)?;
+        pool.get_assets_under_management_usd(AumCalcMode::Max, &accounts_map, &clock)?;
 
     let min_price = if token_price < token_ema_price {
         token_price

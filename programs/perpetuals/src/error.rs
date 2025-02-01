@@ -68,4 +68,8 @@ pub enum PerpetualsError {
     PriceError,
     #[msg("AccountMapMissingEntry")]
     AccountMapMissingEntry,
+    #[msg("Invalid EMA oracle")]
+    InvalidEmaOracle,
+    #[msg("EMA oracle is required")]
+    EmaOracleRequired,
 }

@@ -2,13 +2,12 @@
 
 use {
     crate::{
-        error::PerpetualsError,
-        state::{
+        constants::CUSTODY_SEED, error::PerpetualsError, state::{
             custody::{BorrowRateParams, Custody, Fees, PricingParams},
             multisig::{AdminInstruction, Multisig},
             perpetuals::Permissions,
             pool::{Pool, TokenRatios},
-        },
+        }
     },
     anchor_lang::prelude::*,
 };

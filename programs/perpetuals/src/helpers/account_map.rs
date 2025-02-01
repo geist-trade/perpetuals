@@ -3,13 +3,13 @@ use std::collections::BTreeMap;
 
 use crate::error::PerpetualsError;
 
-pub struct AccountMap<'a> {
-    pub map: BTreeMap::<Pubkey, &'a AccountInfo<'a>>,
+pub struct AccountMap<'a, 'b> {
+    pub map: BTreeMap::<Pubkey, &'b AccountInfo<'a>>,
 }
 
-impl<'a> AccountMap<'a> {
+impl<'a, 'b> AccountMap<'a, 'b> {
     pub fn from_remaining_accounts(
-        remaining_accounts: &'a [AccountInfo<'a>]
+        remaining_accounts: &'b [AccountInfo<'a>]
     ) -> Self {
         let mut map = BTreeMap::new();
 

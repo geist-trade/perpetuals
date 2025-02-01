@@ -35,7 +35,7 @@ pub struct AddPool<'info> {
         space = Pool::LEN,
         seeds = [
             POOL_SEED.as_bytes(),
-            perpetuals.pools.to_le_bytes(),
+            &perpetuals.pools.to_le_bytes(),
         ],
         bump
     )]

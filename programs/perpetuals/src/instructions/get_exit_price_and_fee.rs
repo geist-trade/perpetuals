@@ -26,7 +26,7 @@ pub struct GetExitPriceAndFee<'info> {
     #[account(
         seeds = [
             POOL_SEED.as_bytes(),
-            args.pool_id.to_be_bytes()
+            &args.pool_id.to_le_bytes()
         ],
         bump = pool.bump
     )]
@@ -56,7 +56,7 @@ pub struct GetExitPriceAndFee<'info> {
 
     /// CHECK: oracle account for the collateral token
     #[account(
-        constraint = custody_oracle_account.key() == custody.oracle.oracle_account
+        constraint = custody_oracle_account.key() == custody.oracle.key()
     )]
     pub custody_oracle_account: AccountInfo<'info>,
 
@@ -70,7 +70,7 @@ pub struct GetExitPriceAndFee<'info> {
 
     /// CHECK: oracle account for the collateral token
     #[account(
-        constraint = collateral_custody_oracle_account.key() == collateral_custody.oracle.oracle_account
+        constraint = collateral_custody_oracle_account.key() == collateral_custody.oracle.key()
     )]
     pub collateral_custody_oracle_account: AccountInfo<'info>,
 }
@@ -93,11 +93,11 @@ pub fn get_exit_price_and_fee(
 
     let clock = &Clock::get()?;
 
-    match custody.oracle {
-        Oracle::Pyth(_) => {
-            
-        }
-    }
+    // match custody.oracle. {
+    //     Oracle::Pyth(_) => {
+    //         todo!()
+    //     }
+    // }
 
 
     // TODO: Separate basic and EMA oracles flow to increase readability of the code.
@@ -105,16 +105,14 @@ pub fn get_exit_price_and_fee(
     let token_price = OraclePrice::new_from_oracle(
         &ctx.accounts.custody_oracle_account.to_account_info(),
         &clock,
-        &custody.oracle,
-        curtime,
+        custody.oracle,
         false,
     )?;
 
     let token_ema_price = OraclePrice::new_from_oracle(
         &ctx.accounts.custody_oracle_account.to_account_info(),
         &clock,
-        &custody.oracle,
-        curtime,
+        custody.oracle,
         custody.pricing.use_ema,
     )?;
 
@@ -122,8 +120,8 @@ pub fn get_exit_price_and_fee(
         &ctx.accounts
             .collateral_custody_oracle_account
             .to_account_info(),
-        &collateral_custody.oracle,
-        curtime,
+        &clock,
+        collateral_custody.oracle,
         collateral_custody.pricing.use_ema,
     )?;
 
