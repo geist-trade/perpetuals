@@ -2,7 +2,7 @@
 
 use {
     crate::{
-        constants::{CUSTODY_SEED, PERPETUALS_SEED},
+        constants::{CUSTODY_SEED, PERPETUALS_SEED, POOL_SEED, POSITION_SEED},
         oracle::OraclePrice,
         state::{custody::Custody, perpetuals::Perpetuals, pool::Pool, position::Position},
     },
@@ -18,14 +18,14 @@ pub struct GetLiquidationState<'info> {
     pub perpetuals: Box<Account<'info, Perpetuals>>,
 
     #[account(
-        seeds = [b"pool",
+        seeds = [POOL_SEED.as_bytes(),
                  pool.name.as_bytes()],
         bump = pool.bump
     )]
     pub pool: Box<Account<'info, Pool>>,
 
     #[account(
-        seeds = [b"position",
+        seeds = [POSITION_SEED.as_bytes(),
                  position.owner.as_ref(),
                  pool.key().as_ref(),
                  custody.key().as_ref(),

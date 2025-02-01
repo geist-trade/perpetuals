@@ -2,7 +2,7 @@
 
 use {
     crate::{
-        constants::PERPETUALS_SEED,
+        constants::{PERPETUALS_SEED, POOL_SEED},
         error::PerpetualsError,
         state::{
             multisig::{AdminInstruction, Multisig},
@@ -45,7 +45,7 @@ pub struct RemovePool<'info> {
 
     #[account(
         mut,
-        seeds = [b"pool",
+        seeds = [POOL_SEED.as_bytes(),
                  pool.name.as_bytes()],
         bump = pool.bump,
         close = transfer_authority

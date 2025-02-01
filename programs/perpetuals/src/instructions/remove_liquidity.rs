@@ -4,6 +4,7 @@ use {
     crate::{
         constants::{
             CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, LP_TOKEN_MINT_SEED, PERPETUALS_SEED,
+            POOL_SEED,
         },
         error::PerpetualsError,
         helpers::AccountMap,
@@ -55,7 +56,7 @@ pub struct RemoveLiquidity<'info> {
 
     #[account(
         mut,
-        seeds = [b"pool",
+        seeds = [POOL_SEED.as_bytes(),
                  pool.name.as_bytes()],
         bump = pool.bump
     )]

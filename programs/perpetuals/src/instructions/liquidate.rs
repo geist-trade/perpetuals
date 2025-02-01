@@ -2,7 +2,7 @@
 
 use {
     crate::{
-        constants::{CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED},
+        constants::{CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED, POOL_SEED, POSITION_SEED},
         error::PerpetualsError,
         math,
         oracle::OraclePrice,
@@ -51,7 +51,7 @@ pub struct Liquidate<'info> {
 
     #[account(
         mut,
-        seeds = [b"pool",
+        seeds = [POOL_SEED.as_bytes(),
                  pool.name.as_bytes()],
         bump = pool.bump
     )]
@@ -59,7 +59,7 @@ pub struct Liquidate<'info> {
 
     #[account(
         mut,
-        seeds = [b"position",
+        seeds = [POSITION_SEED.as_bytes(),
                  position.owner.as_ref(),
                  pool.key().as_ref(),
                  custody.key().as_ref(),

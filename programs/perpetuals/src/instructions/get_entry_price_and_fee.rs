@@ -2,7 +2,7 @@
 
 use {
     crate::{
-        constants::{CUSTODY_SEED, PERPETUALS_SEED},
+        constants::{CUSTODY_SEED, PERPETUALS_SEED, POOL_SEED},
         oracle::OraclePrice,
         state::{
             custody::Custody,
@@ -24,7 +24,7 @@ pub struct GetEntryPriceAndFee<'info> {
     pub perpetuals: Box<Account<'info, Perpetuals>>,
 
     #[account(
-        seeds = [b"pool",
+        seeds = [POOL_SEED.as_bytes(),
                  pool.name.as_bytes()],
         bump = pool.bump
     )]

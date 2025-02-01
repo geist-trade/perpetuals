@@ -2,7 +2,7 @@
 
 use {
     crate::{
-        constants::PERPETUALS_SEED,
+        constants::{PERPETUALS_SEED, POOL_SEED},
         helpers::AccountMap,
         state::{
             perpetuals::Perpetuals,
@@ -21,7 +21,7 @@ pub struct GetAssetsUnderManagement<'info> {
     pub perpetuals: Box<Account<'info, Perpetuals>>,
 
     #[account(
-        seeds = [b"pool",
+        seeds = [POOL_SEED.as_bytes(),
                  pool.name.as_bytes()],
         bump = pool.bump
     )]

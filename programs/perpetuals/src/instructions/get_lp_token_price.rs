@@ -2,7 +2,7 @@
 
 use {
     crate::{
-        constants::{LP_TOKEN_MINT_SEED, PERPETUALS_SEED},
+        constants::{LP_TOKEN_MINT_SEED, PERPETUALS_SEED, POOL_SEED},
         helpers::AccountMap,
         math,
         state::{
@@ -24,7 +24,7 @@ pub struct GetLpTokenPrice<'info> {
     pub perpetuals: Box<Account<'info, Perpetuals>>,
 
     #[account(
-        seeds = [b"pool",
+        seeds = [POOL_SEED.as_bytes(),
                  pool.name.as_bytes()],
         bump = pool.bump
     )]

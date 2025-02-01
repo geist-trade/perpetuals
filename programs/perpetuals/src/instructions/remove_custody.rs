@@ -2,7 +2,7 @@
 
 use {
     crate::{
-        constants::{CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED},
+        constants::{CUSTODY_SEED, CUSTODY_TOKEN_ACCOUNT_SEED, PERPETUALS_SEED, POOL_SEED},
         error::PerpetualsError,
         state::{
             custody::Custody,
@@ -47,7 +47,7 @@ pub struct RemoveCustody<'info> {
                               (pool.ratios.len() - 1) * std::mem::size_of::<TokenRatios>(),
         realloc::payer = admin,
         realloc::zero = false,
-        seeds = [b"pool",
+        seeds = [POOL_SEED.as_bytes(),
                  pool.name.as_bytes()],
         bump = pool.bump
     )]
