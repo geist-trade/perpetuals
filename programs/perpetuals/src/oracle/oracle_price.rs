@@ -3,7 +3,7 @@ use crate::{state::custody::Oracle};
 use crate::error::PerpetualsError;
 use crate::error::*;
 use crate::state::*;
-use super::{get_price_from_switchboard, get_price_from_pyth};
+use super::{get_price_from_switchboard};
 use crate::state::perpetuals::Perpetuals;
 use crate::math;
 
@@ -11,11 +11,49 @@ const ORACLE_EXPONENT_SCALE: i32 = -9;
 const ORACLE_PRICE_SCALE: u64 = 1_000_000_000;
 const ORACLE_MAX_PRICE: u64 = (1 << 28) - 1;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct OraclePrice {
     pub price: u64,
     pub exponent: i32,
 }
+
+impl Ord for OraclePrice {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        // Normalize exponents before comparing
+        let (price1, price2) = if self.exponent == other.exponent {
+            (self.price, other.price)
+        } else {
+            let target_exp = self.exponent.max(other.exponent);
+            let p1 = if self.exponent < target_exp {
+                self.price * 10u64.pow((target_exp - self.exponent) as u32)
+            } else {
+                self.price
+            };
+            let p2 = if other.exponent < target_exp {
+                other.price * 10u64.pow((target_exp - other.exponent) as u32)
+            } else {
+                other.price
+            };
+            (p1, p2)
+        };
+        price1.cmp(&price2)
+    }
+}
+
+impl PartialOrd for OraclePrice {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for OraclePrice {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == std::cmp::Ordering::Equal
+    }
+}
+
+impl Eq for OraclePrice {}
+
 
 #[allow(dead_code)]
 impl OraclePrice {
@@ -37,8 +75,8 @@ impl OraclePrice {
         use_ema: bool,
     ) -> Result<Self> {
         match oracle_type {
-            Oracle::PYTH(_) => get_price_from_pyth(oracle_account, clock, use_ema),
-            Oracle::SWITCHBOARD(_) => get_price_from_switchboard(oracle_account, &clock),
+            Oracle::Pyth(_) => get_price_from_pyth(oracle_account, clock, use_ema),
+            Oracle::Switchboard(_) => get_price_from_switchboard(oracle_account, &clock),
             _ => err!(PerpetualsError::UnsupportedOracle),
         }
     }

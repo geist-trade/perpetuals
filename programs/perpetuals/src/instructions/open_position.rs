@@ -211,11 +211,11 @@ pub fn open_position(ctx: Context<OpenPosition>, params: &OpenPositionParams) ->
     let clock = &Clock::get();
 
     let (token_price, token_ema_price) = match custody.oracle {
-        Oracle::PYTH(_) => {
+        Oracle::Pyth(_) => {
             // Both base and ema prices are in the same account
             get_prices_from_pyth(custody_oracle, clock)
         },
-        Oracle::SWITCHBOARD(_) => {
+        Oracle::Switchboard(_) => {
             (
                 // Base and ema in separate accounts in case of switchboard
                 get_price_from_switchboard(custody_oracle, clock),
@@ -225,11 +225,11 @@ pub fn open_position(ctx: Context<OpenPosition>, params: &OpenPositionParams) ->
     }?;
 
     let (collateral_price, collateral_ema_price) = match custody.oracle {
-        Oracle::PYTH(_) => {
+        Oracle::Pyth(_) => {
             // Both base and ema prices are in the same account
             get_prices_from_pyth(collateral_custody_oracle, clock)
         },
-        Oracle::SWITCHBOARD(_) => {
+        Oracle::Switchboard(_) => {
             (
                 // Base and ema in separate accounts in case of switchboard
                 get_price_from_switchboard(collateral_custody_oracle, clock),

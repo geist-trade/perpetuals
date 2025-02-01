@@ -94,7 +94,7 @@ pub fn get_exit_price_and_fee(
     let clock = &Clock::get()?;
 
     match custody.oracle {
-        Oracle::PYTH(_) => {
+        Oracle::Pyth(_) => {
             
         }
     }

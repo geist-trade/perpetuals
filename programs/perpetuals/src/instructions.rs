@@ -42,7 +42,6 @@ pub use {
     get_liquidation_state::*, get_lp_token_price::*, get_pnl::*,
     get_remove_liquidity_amount_and_fee::*, get_swap_amount_and_fees::*, init::*, liquidate::*,
     open_position::*, remove_collateral::*, remove_custody::*, remove_liquidity::*, remove_pool::*,
-    set_admin_signers::*, set_custody_config::*, set_custom_oracle_price::*,
-    set_custom_oracle_price_permissionless::*, set_permissions::*, set_test_time::*, swap::*,
-    update_pool_aum::*, upgrade_custody::*, withdraw_fees::*, withdraw_sol_fees::*,
+    set_admin_signers::*, set_custody_config::*, set_permissions::*, set_test_time::*, swap::*,
+    update_pool_aum::*, withdraw_fees::*, withdraw_sol_fees::*,
 };

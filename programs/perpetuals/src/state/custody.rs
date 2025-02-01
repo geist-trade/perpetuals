@@ -17,7 +17,6 @@ use anchor_spl::token::{
     transfer
 };
 use crate::oracle::{
-    get_price_from_pyth,
     get_price_from_switchboard,
     OraclePrice
 };
@@ -141,10 +140,10 @@ pub struct PositionStats {
     pub cumulative_interest_snapshot: u128,
 }
 
-#[derive(AnchorDeserialize, AnchorSerialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, AnchorDeserialize, AnchorSerialize)]
 pub enum Oracle {
-    PYTH(Pubkey),
-    SWITCHBOARD(Pubkey)
+    Pyth(Pubkey),
+    Switchboard(Pubkey)
 }
 
 impl Oracle {
@@ -159,19 +158,23 @@ impl Oracle {
             get_price_from_switchboard(account, &clock)?;
             Ok(Oracle::Switchboard(account.key()))
         } else {
-            Err(PerpetualsError::InvalidOracle.into())
+            Err(PerpetualsError::InvalidOracleAccount.into())
         }
     }
 
     pub fn key(&self) -> &Pubkey {
         match self {
-            Oracle::PYTH(key) | Oracle::SWITCHBOARD(key) => key
+            Oracle::Pyth(key) | Oracle::Switchboard(key) => key
         }
+    }
+
+    pub fn validate(&self) -> bool {
+        true
     }
 }
 
 #[account]
-#[derive(Default, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Custody {
     // static parameters
     pub pool: Pubkey,
@@ -641,8 +644,8 @@ impl Custody {
 
     pub fn needs_ema_oracle(&self) -> bool {
         match self.oracle {
-            Oracle::PYTH(_) => false,
-            Oracle::SWITCHBOARD(_) => true
+            Oracle::Pyth(_) => false,
+            Oracle::Switchboard(_) => true
         }
     }
 }

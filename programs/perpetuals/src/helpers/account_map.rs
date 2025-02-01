@@ -3,30 +3,27 @@ use std::collections::BTreeMap;
 
 use crate::error::PerpetualsError;
 
-pub struct AccountMap {
-    pub map: BTreeMap::<Pubkey, &AccountInfo>,
+pub struct AccountMap<'a> {
+    pub map: BTreeMap::<Pubkey, &'a AccountInfo<'a>>,
 }
 
-impl AccountMap {
+impl<'a> AccountMap<'a> {
     pub fn from_remaining_accounts(
-        remaining_accounts: &[AccountInfo]
-    ) -> Result<Self> {
-        let map = BTreeMap::<Pubkey, &AccountInfo>::new();
+        remaining_accounts: &'a [AccountInfo<'a>]
+    ) -> Self {
+        let mut map = BTreeMap::new();
 
-        for i in 0..remaining_accounts.len() {
-            let account = remaining_accounts[i];
-            map.insert(account.key, &account);
+        for account in remaining_accounts {
+            map.insert(*account.key, account);
         }
 
-        Ok(AccountMap { map })
+        AccountMap { map }
     }
 
-    pub fn get_account(&self, key: &Pubkey) -> Result<&AccountInfo> {
-        let account = self
-            .map
+    pub fn get_account(&self, key: &Pubkey) -> Result<&AccountInfo<'a>> {
+        self.map
             .get(key)
-            .ok_or(PerpetualsError::AccountMapMissingEntry)?;
-
-        Ok(account)
+            .copied()
+            .ok_or(PerpetualsError::AccountMapMissingEntry.into())
     }
 }
